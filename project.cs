@@ -1,4 +1,5 @@
 ﻿#:package Microsoft.Build@18.0.2
+using System.IO;
 using Microsoft.Build.Construction;
 
 var project = ProjectRootElement.Create();
@@ -136,5 +137,20 @@ extensionTargets.Label = "ExtensionTargets";
 var vcpkg = project.AddPropertyGroup();
 vcpkg.Label = "Vcpkg";
 vcpkg.AddProperty("VcpkgEnableManifest", "true");
+
+// ----- 15. Add sources from "src" folder -----
+var sources = project.AddItemGroup();
+
+// Add all .cpp files
+foreach (var cppFile in Directory.GetFiles("src", "*.cpp"))
+{
+    sources.AddItem("ClCompile", cppFile.Replace('\\', '/'));
+}
+
+// Add all .h files
+foreach (var hFile in Directory.GetFiles("src", "*.h"))
+{
+    sources.AddItem("ClInclude", hFile.Replace('\\', '/'));
+}
 
 project.Save("build/app.vcxproj");
