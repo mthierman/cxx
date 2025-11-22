@@ -29,5 +29,6 @@ globals.AddProperty("ProjectGuid", "{4985344b-071c-4114-a0bb-41d2b55773cd}");
 globals.AddProperty("RootNamespace", "app");
 globals.AddProperty("WindowsTargetPlatformVersion", "10.0");
 
+project.AddImport("$(VCTargetsPath)\\Microsoft.Cpp.Default.props");
 
 project.Save("build/app.vcxproj");
