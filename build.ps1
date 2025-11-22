@@ -1,2 +1,2 @@
-dotnet run .\empty_solution.cs
-dotnet run .\empty_project.cs
+dotnet run .\solution.cs
+dotnet run .\project.cs
