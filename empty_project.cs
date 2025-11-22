@@ -4,11 +4,41 @@ using Microsoft.Build.Construction;
 var project = ProjectRootElement.Create();
 project.DefaultTargets = "Build";
 project.ToolsVersion = null;
-var project_configurations = project.AddItemGroup();
-project_configurations.Label = "ProjectConfigurations";
 
 string[] configurations = { "Debug", "Release" };
 string[] platforms = { "Win32", "x64" };
+
+// ----- 1. Globals -----
+var globals = project.AddPropertyGroup();
+globals.Label = "Globals";
+globals.AddProperty("VCProjectVersion", "18.0");
+globals.AddProperty("Keyword", "Win32Proj");
+globals.AddProperty("ProjectGuid", "{4985344b-071c-4114-a0bb-41d2b55773cd}");
+globals.AddProperty("RootNamespace", "app");
+globals.AddProperty("WindowsTargetPlatformVersion", "10.0");
+
+// ----- 2. Import Default.props -----
+project.AddImport("$(VCTargetsPath)\\Microsoft.Cpp.Default.props");
+
+// ----- 3. Configuration PropertyGroups -----
+foreach (var config in configurations)
+{
+    foreach (var platform in platforms)
+    {
+        var group = project.AddPropertyGroup();
+        group.Condition = $"'$(Configuration)|$(Platform)'=='{config}|{platform}'";
+        group.Label = "Configuration";
+
+        group.AddProperty("ConfigurationType", "Application");
+        group.AddProperty("UseDebugLibraries", config == "Debug" ? "true" : "false");
+        group.AddProperty("PlatformToolset", "v145");
+        group.AddProperty("CharacterSet", "Unicode");
+    }
+}
+
+// ----- 4. ProjectConfigurations (must be AFTER config groups) -----
+var project_configurations = project.AddItemGroup();
+project_configurations.Label = "ProjectConfigurations";
 
 foreach (var config in configurations)
 {
@@ -19,16 +49,5 @@ foreach (var config in configurations)
         item.AddMetadata("Platform", platform);
     }
 }
-
-var globals = project.AddPropertyGroup();
-globals.Label = "Globals";
-
-globals.AddProperty("VCProjectVersion", "18.0");
-globals.AddProperty("Keyword", "Win32Proj");
-globals.AddProperty("ProjectGuid", "{4985344b-071c-4114-a0bb-41d2b55773cd}");
-globals.AddProperty("RootNamespace", "app");
-globals.AddProperty("WindowsTargetPlatformVersion", "10.0");
-
-project.AddImport("$(VCTargetsPath)\\Microsoft.Cpp.Default.props");
 
 project.Save("build/app.vcxproj");
