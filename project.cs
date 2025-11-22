@@ -132,4 +132,9 @@ project.AddImport(@"$(VCTargetsPath)\Microsoft.Cpp.targets");
 var extensionTargets = project.AddImportGroup();
 extensionTargets.Label = "ExtensionTargets";
 
+// ----- 14. Vcpkg PropertyGroup -----
+var vcpkg = project.AddPropertyGroup();
+vcpkg.Label = "Vcpkg";
+vcpkg.AddProperty("VcpkgEnableManifest", "true");
+
 project.Save("build/app.vcxproj");
