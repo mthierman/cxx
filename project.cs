@@ -54,27 +54,71 @@ foreach (var config in configurations)
 project.AddImport(@"$(VCTargetsPath)\Microsoft.Cpp.props");
 
 // ----- 6. ExtensionSettings ImportGroup -----
-var extensionSettings = project.AddImportGroup();
-extensionSettings.Label = "ExtensionSettings";
+var extension_settings = project.AddImportGroup();
+extension_settings.Label = "ExtensionSettings";
 
 // ----- 7. Shared ImportGroup -----
-var sharedImports = project.AddImportGroup();
-sharedImports.Label = "Shared";
+var shared = project.AddImportGroup();
+shared.Label = "Shared";
 
 // ----- 8. Per-configuration PropertySheets -----
 foreach (var config in configurations)
 {
     foreach (var platform in platforms)
     {
-        var pg = project.AddImportGroup();
-        pg.Label = "PropertySheets";
-        pg.Condition = $"'$(Configuration)|$(Platform)'=='{config}|{platform}'";
+        var property_sheets = project.AddImportGroup();
+        property_sheets.Label = "PropertySheets";
+        property_sheets.Condition = $"'$(Configuration)|$(Platform)'=='{config}|{platform}'";
 
-        var import = pg.AddImport(@"$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props");
+        var import = property_sheets.AddImport(@"$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props");
         import.Condition = $"exists('$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props')";
         import.Label = "LocalAppDataPlatform";
     }
 }
 
+// ----- 9. UserMacros -----
+var user_macros = project.AddPropertyGroup();
+user_macros.Label = "UserMacros";
+
+// ----- 10. ItemDefinitionGroups -----
+foreach (var config in configurations)
+{
+    foreach (var platform in platforms)
+    {
+        var project_settings = project.AddItemDefinitionGroup();
+        project_settings.Condition = $"'$(Configuration)|$(Platform)'=='{config}|{platform}'";
+
+        // ----- ClCompile -----
+        var clCompile = project_settings.AddItemDefinition("ClCompile");
+
+        clCompile.AddMetadata("WarningLevel", "Level3", false);
+        clCompile.AddMetadata("SDLCheck", "true", false);
+        clCompile.AddMetadata("ConformanceMode", "true", false);
+        clCompile.AddMetadata("LanguageStandard", "stdcpp20", false);
+
+        // PreprocessorDefinitions
+        string preprocessor = config switch
+        {
+            "Debug" when platform == "Win32" => "WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)",
+            "Release" when platform == "Win32" => "WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)",
+            "Debug" when platform == "x64" => "_DEBUG;_CONSOLE;%(PreprocessorDefinitions)",
+            "Release" when platform == "x64" => "NDEBUG;_CONSOLE;%(PreprocessorDefinitions)",
+            _ => "%(PreprocessorDefinitions)"
+        };
+        clCompile.AddMetadata("PreprocessorDefinitions", preprocessor, false);
+
+        // Release-specific flags
+        if (config == "Release")
+        {
+            clCompile.AddMetadata("FunctionLevelLinking", "true", false);
+            clCompile.AddMetadata("IntrinsicFunctions", "true", false);
+        }
+
+        // ----- Link -----
+        var link = project_settings.AddItemDefinition("Link");
+        link.AddMetadata("SubSystem", "Console", false);
+        link.AddMetadata("GenerateDebugInformation", "true", false);
+    }
+}
 
 project.Save("build/app.vcxproj");
