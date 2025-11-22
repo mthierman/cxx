@@ -50,4 +50,15 @@ foreach (var config in configurations)
     }
 }
 
+// ----- 5. Import Microsoft.Cpp.props -----
+project.AddImport(@"$(VCTargetsPath)\Microsoft.Cpp.props");
+
+// ----- 6. ExtensionSettings ImportGroup -----
+var extensionSettings = project.AddImportGroup();
+extensionSettings.Label = "ExtensionSettings";
+
+// ----- 7. Shared ImportGroup -----
+var sharedImports = project.AddImportGroup();
+sharedImports.Label = "Shared";
+
 project.Save("build/app.vcxproj");
