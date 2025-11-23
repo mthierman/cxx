@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Diagnostics;
 using System.Reflection;
 
 public class App
@@ -19,7 +20,8 @@ public class App
         ["gen"] = new Command("gen", "Generate build"),
         ["debug"] = new Command("debug", "Build debug"),
         ["release"] = new Command("release", "Build release"),
-        ["clean"] = new Command("clean", "Clean build")
+        ["clean"] = new Command("clean", "Clean build"),
+        ["run"] = new Command("run", "Run build")
     };
 
     static App()
@@ -48,6 +50,14 @@ public class App
         sub_command["clean"].SetAction(async parseResult =>
         {
             return MSBuild.clean() ? 0 : 1;
+        });
+
+        sub_command["run"].SetAction(async parseResult =>
+        {
+            using var process = Process.Start(new ProcessStartInfo() { FileName = Path.Combine(MSBuild.Paths.base_dir, "build", "debug", "app.exe"), WorkingDirectory = MSBuild.Paths.base_dir });
+            process?.WaitForExit();
+
+            return 0;
         });
     }
 
