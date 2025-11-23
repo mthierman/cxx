@@ -22,7 +22,8 @@ public class App
         ["debug"] = new Command("debug", "Build debug"),
         ["release"] = new Command("release", "Build release"),
         ["clean"] = new Command("clean", "Clean build"),
-        ["run"] = new Command("run", "Run build")
+        ["run"] = new Command("run", "Run build"),
+        ["format"] = new Command("format", "Format sources")
     };
 
     static App()
@@ -70,6 +71,13 @@ public class App
         {
             using var process = Process.Start(new ProcessStartInfo() { FileName = Path.Combine(MSBuild.Paths.base_dir, "build", "debug", "app.exe"), WorkingDirectory = MSBuild.Paths.base_dir });
             process?.WaitForExit();
+
+            return 0;
+        });
+
+        sub_command["format"].SetAction(async parseResult =>
+        {
+            await Clang.format();
 
             return 0;
         });

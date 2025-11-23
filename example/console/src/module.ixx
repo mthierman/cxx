@@ -1,3 +1,3 @@
 export module my_module;
 
-export auto my_func() -> void {}
+export auto my_func() -> void { }
