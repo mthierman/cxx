@@ -139,22 +139,24 @@ vcpkg.Label = "Vcpkg";
 vcpkg.AddProperty("VcpkgEnableManifest", "true");
 
 // ----- 15. Add sources from "src" folder -----
-string srcDir = "src";
+string build_dir = "build";   // where the .vcxproj will be generated
+// string root_dir = ".";    // current directory, script runs at project root
+string src_dir = "src";
 
-if (Directory.Exists(srcDir))
+if (Directory.Exists(src_dir))
 {
-    var cppFiles = Directory.GetFiles(srcDir, "*.cpp");
-    var hFiles = Directory.GetFiles(srcDir, "*.h");
+    var source_files = Directory.GetFiles(src_dir, "*.cpp");
+    var header_files = Directory.GetFiles(src_dir, "*.h");
 
-    if (cppFiles.Length > 0 || hFiles.Length > 0)
+    if (source_files.Length > 0 || header_files.Length > 0)
     {
         var sources = project.AddItemGroup();
 
-        foreach (var cppFile in cppFiles)
-            sources.AddItem("ClCompile", cppFile.Replace('\\', '/'));
+        foreach (var source_file in source_files)
+            sources.AddItem("ClCompile", Path.GetRelativePath(build_dir, source_file).Replace('\\', '/'));
 
-        foreach (var hFile in hFiles)
-            sources.AddItem("ClInclude", hFile.Replace('\\', '/'));
+        foreach (var header_file in header_files)
+            sources.AddItem("ClInclude", Path.GetRelativePath(build_dir, header_file).Replace('\\', '/'));
     }
     else
     {
