@@ -9,14 +9,10 @@ public class App
     public int run(string[] args)
     {
         if (!Directory.Exists(build_dir))
-        {
             Directory.CreateDirectory(build_dir);
 
-            if (!Directory.Exists(build_dir))
-            {
-                return 1;
-            }
-        }
+        if (!Directory.Exists(build_dir))
+            return 1;
 
         var version = Assembly.GetExecutingAssembly()
                       .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
