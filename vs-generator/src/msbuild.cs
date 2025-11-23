@@ -239,10 +239,13 @@ public class MSBuild
         return true;
     }
 
-    public static bool build(BuildConfiguration config)
+    public static async Task<bool> build(BuildConfiguration config)
     {
         if (!Directory.Exists(Paths.build_dir))
             Directory.CreateDirectory(Paths.build_dir);
+
+        if (!await generate())
+            return false;
 
         var start_info = new ProcessStartInfo() { FileName = Paths.exe, WorkingDirectory = Paths.build_dir, Arguments = config == BuildConfiguration.Release ? "/p:Configuration=Release" : string.Empty };
         Process.Start(start_info)?.WaitForExit();

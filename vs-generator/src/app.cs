@@ -37,12 +37,12 @@ public class App
 
         sub_command["build"].SetAction(async parseResult =>
         {
-            return (await MSBuild.generate() && MSBuild.build(MSBuild.BuildConfiguration.Debug)) ? 0 : 1;
+            return await MSBuild.build(MSBuild.BuildConfiguration.Debug) ? 0 : 1;
         });
 
         sub_command["release"].SetAction(async parseResult =>
         {
-            return (await MSBuild.generate() && MSBuild.build(MSBuild.BuildConfiguration.Release)) ? 0 : 1;
+            return await MSBuild.build(MSBuild.BuildConfiguration.Release) ? 0 : 1;
         });
 
         sub_command["clean"].SetAction(async parseResult =>
