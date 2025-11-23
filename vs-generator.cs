@@ -188,9 +188,8 @@ async Task generate_project()
     project.Save("build/app.vcxproj");
 }
 
+// Register defaults before using any MSBuild types
 MSBuildLocator.RegisterDefaults();
-var instances = MSBuildLocator.QueryVisualStudioInstances().ToArray();
-Console.WriteLine(instances[0]);
 
 await generate_project();
 
