@@ -257,10 +257,10 @@ public class MSBuild
 
     public static bool clean()
     {
-        if (!Directory.Exists(App.build_dir))
+        if (!Directory.Exists(Paths.build_dir))
             return false;
 
-        Directory.Delete(App.build_dir, true);
+        Directory.Delete(Paths.build_dir, true);
 
         return true;
     }
