@@ -86,7 +86,7 @@ public class MSBuild
                 group.AddProperty("UseDebugLibraries", config == "Debug" ? "true" : "false");
                 group.AddProperty("PlatformToolset", "v145");
                 group.AddProperty("CharacterSet", "Unicode");
-                group.AddProperty("IntDir", @"$(SolutionDir)\$(Configuration)\");
+                group.AddProperty("IntDir", @"$(SolutionDir)\$(Configuration)\obj\");
                 group.AddProperty("OutDir", @"$(SolutionDir)\$(Configuration)\");
             }
         }
