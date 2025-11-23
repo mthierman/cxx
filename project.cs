@@ -147,6 +147,7 @@ if (Directory.Exists(src_dir))
 {
     var source_files = Directory.GetFiles(src_dir, "*.cpp");
     var header_files = Directory.GetFiles(src_dir, "*.h");
+    var module_files = Directory.GetFiles(src_dir, "*.ixx");
 
     if (source_files.Length > 0 || header_files.Length > 0)
     {
@@ -154,6 +155,9 @@ if (Directory.Exists(src_dir))
 
         foreach (var source_file in source_files)
             sources.AddItem("ClCompile", Path.GetRelativePath(build_dir, source_file).Replace('\\', '/'));
+
+        foreach (var module_file in module_files)
+            sources.AddItem("ClCompile", Path.GetRelativePath(build_dir, module_file).Replace('\\', '/'));
 
         foreach (var header_file in header_files)
             sources.AddItem("ClInclude", Path.GetRelativePath(build_dir, header_file).Replace('\\', '/'));
