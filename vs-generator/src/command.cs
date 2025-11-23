@@ -2,8 +2,8 @@ using System.CommandLine;
 
 public partial class App
 {
-    private RootCommand root_command { get; } = new RootCommand($"vs-generator {version}");
-    private Dictionary<string, Command> commands = new Dictionary<string, Command>
+    private static RootCommand root_command { get; } = new RootCommand($"vs-generator {version}");
+    private static Dictionary<string, Command> commands = new Dictionary<string, Command>
     {
         ["gen"] = new Command("gen", "Generate build"),
         ["build"] = new Command("build", "Build debug"),
@@ -11,7 +11,7 @@ public partial class App
         ["clean"] = new Command("clean", "Clean build")
     };
 
-    public int setup_commands(string[] args)
+    public static int setup_commands(string[] args)
     {
         foreach (var command in commands.Values)
         {
