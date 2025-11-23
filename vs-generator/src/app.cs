@@ -22,7 +22,7 @@ public class App
         ["clean"] = new Command("clean", "Clean build")
     };
 
-    public int run(string[] args)
+    public static int run(string[] args)
     {
         foreach (var command in sub_command.Values)
         {
