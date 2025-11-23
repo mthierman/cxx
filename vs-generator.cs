@@ -1,7 +1,8 @@
-﻿using Microsoft.Build.Locator;
-using Microsoft.Build.Construction;
+﻿using Microsoft.Build.Construction;
+using Microsoft.Build.Locator;
 using Microsoft.VisualStudio.SolutionPersistence.Model;
 using Microsoft.VisualStudio.SolutionPersistence.Serializer;
+
 void register_msbuild()
 {
     MSBuildLocator.RegisterDefaults();
