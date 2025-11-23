@@ -131,6 +131,8 @@ public class MSBuild
                 cl_compile.AddMetadata("LanguageStandard", "stdcpp23", false);
                 cl_compile.AddMetadata("LanguageStandard_C", "stdc17", false);
                 cl_compile.AddMetadata("BuildStlModules", "true", false);
+                cl_compile.AddMetadata("OutDir", "$(SolutionDir)\\build\\", false);
+                cl_compile.AddMetadata("IntDir", "$(SolutionDir)\\build\\$(Configuration)\\", false);
 
                 // PreprocessorDefinitions
                 string preprocessor = config switch
