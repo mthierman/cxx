@@ -45,19 +45,26 @@ public class MSBuild
         }
     }
 
+    private static async Task generate_solution()
+    {
+        var solution_model = new SolutionModel();
+
+        solution_model.AddPlatform("x64");
+        solution_model.AddPlatform("x86");
+
+        var solution_project = solution_model.AddProject("app.vcxproj");
+
+        solution_project.Id = Guid.NewGuid();
+
+        await SolutionSerializers.SlnXml.SaveAsync("build/app.slnx", solution_model, new CancellationToken());
+    }
+
     public static async Task<bool> generate()
     {
         if (!Directory.Exists(Paths.src_dir))
             return false;
 
-        var solution_model = new SolutionModel();
-        solution_model.AddPlatform("x64");
-        solution_model.AddPlatform("x86");
-
-        var solution_project = solution_model.AddProject("app.vcxproj");
-        solution_project.Id = Guid.NewGuid();
-
-        await SolutionSerializers.SlnXml.SaveAsync("build/app.slnx", solution_model, new CancellationToken());
+        await generate_solution();
 
         var project = ProjectRootElement.Create();
         project.DefaultTargets = "Build";
@@ -200,38 +207,20 @@ public class MSBuild
         vcpkg.AddProperty("VcpkgEnableManifest", "true");
 
         // ----- 15. Add sources from "src" folder -----
-        string build_dir = "build";   // where the .vcxproj will be generated
-                                      // string root_dir = ".";    // current directory, script runs at project root
-        string src_dir = "src";
+        var source_files = Directory.GetFiles(Paths.src_dir, "*.cpp");
+        var header_files = Directory.GetFiles(Paths.src_dir, "*.h");
+        var module_files = Directory.GetFiles(Paths.src_dir, "*.ixx");
 
-        if (Directory.Exists(src_dir))
-        {
-            var source_files = Directory.GetFiles(src_dir, "*.cpp");
-            var header_files = Directory.GetFiles(src_dir, "*.h");
-            var module_files = Directory.GetFiles(src_dir, "*.ixx");
+        var sources = project.AddItemGroup();
 
-            if (source_files.Length > 0 || header_files.Length > 0)
-            {
-                var sources = project.AddItemGroup();
+        foreach (var source_file in source_files)
+            sources.AddItem("ClCompile", Path.GetRelativePath(Paths.build_dir, source_file).Replace('\\', '/'));
 
-                foreach (var source_file in source_files)
-                    sources.AddItem("ClCompile", Path.GetRelativePath(build_dir, source_file).Replace('\\', '/'));
+        foreach (var module_file in module_files)
+            sources.AddItem("ClCompile", Path.GetRelativePath(Paths.build_dir, module_file).Replace('\\', '/'));
 
-                foreach (var module_file in module_files)
-                    sources.AddItem("ClCompile", Path.GetRelativePath(build_dir, module_file).Replace('\\', '/'));
-
-                foreach (var header_file in header_files)
-                    sources.AddItem("ClInclude", Path.GetRelativePath(build_dir, header_file).Replace('\\', '/'));
-            }
-            else
-            {
-                Console.WriteLine("Warning: 'src' directory exists but contains no .cpp or .h files.");
-            }
-        }
-        else
-        {
-            Console.WriteLine("Warning: 'src' directory does not exist.");
-        }
+        foreach (var header_file in header_files)
+            sources.AddItem("ClInclude", Path.GetRelativePath(Paths.build_dir, header_file).Replace('\\', '/'));
 
         project.Save("build/app.vcxproj");
 
