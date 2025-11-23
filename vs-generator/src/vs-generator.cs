@@ -1,2 +1,2 @@
 ﻿MSBuild.register();
-await MSBuild.generate_project();
+CLI.parse_args(args);
