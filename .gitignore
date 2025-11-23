@@ -1,5 +1,10 @@
 .vs
+.vscode
+build
+dist
 bin
 obj
-vcpkg_installed
 x64
+
+node_modules
+vcpkg_installed
