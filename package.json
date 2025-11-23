@@ -8,5 +8,8 @@
     },
     "keywords": [],
     "author": "",
-    "packageManager": "pnpm@10.22.0"
+    "packageManager": "pnpm@10.22.0",
+    "devDependencies": {
+        "prettier": "^3.6.2"
+    }
 }
