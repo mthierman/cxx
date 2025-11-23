@@ -5,11 +5,6 @@ using Microsoft.VisualStudio.SolutionPersistence.Serializer;
 
 async Task generate_project()
 {
-
-    var instances = MSBuildLocator.QueryVisualStudioInstances().ToArray();
-
-    Console.WriteLine(instances[0]);
-
     var solution_model = new SolutionModel();
     solution_model.AddPlatform("x64");
     solution_model.AddPlatform("x86");
@@ -194,8 +189,10 @@ async Task generate_project()
 }
 
 MSBuildLocator.RegisterDefaults();
-await generate_project();
+var instances = MSBuildLocator.QueryVisualStudioInstances().ToArray();
+Console.WriteLine(instances[0]);
 
+await generate_project();
 
 // ----- 16. Generate compile_commands.json -----
 // var compileCommands = new List<Dictionary<string, string>>();
