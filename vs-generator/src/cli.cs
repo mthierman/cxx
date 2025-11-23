@@ -15,6 +15,14 @@ public class CLI
             await MSBuild.generate_project();
         });
 
+        Command build = new("build", "Build project") { };
+        root_command.Subcommands.Add(build);
+
+        build.SetAction(async parseResult =>
+        {
+            Console.WriteLine("Building");
+        });
+
         return root_command.Parse(args!).Invoke();
     }
 }
