@@ -1,11 +1,12 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Diagnostics;
 
-public class CLI
+public class App
 {
-    public static int parse_args(string[]? args)
+    public static int run(string[]? args)
     {
-        RootCommand root_command = new("vs-generator v0.0.0");
+        RootCommand root_command = new("vs-generator");
         Console.WriteLine(root_command.Description);
 
         Command gen = new("gen", "Generate build files") { };
@@ -22,13 +23,12 @@ public class CLI
         build.SetAction(async parseResult =>
         {
             var build_dir = Path.Combine(Environment.CurrentDirectory, "build");
-            if (!Directory.Exists(build_dir))
+            if (Directory.Exists(build_dir))
             {
-                Directory.CreateDirectory(build_dir);
+                var start_info = new ProcessStartInfo() { FileName = "msbuild", WorkingDirectory = build_dir };
+                using var process = Process.Start(start_info);
+                process?.WaitForExit();
             }
-            Console.WriteLine($"Building {build_dir}");
-
-            Process.Start("msbuild");
         });
 
         return root_command.Parse(args!).Invoke();

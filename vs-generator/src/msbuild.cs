@@ -1,15 +1,9 @@
 ﻿using Microsoft.Build.Construction;
-using Microsoft.Build.Locator;
 using Microsoft.VisualStudio.SolutionPersistence.Model;
 using Microsoft.VisualStudio.SolutionPersistence.Serializer;
 
 public class MSBuild
 {
-    public static void register()
-    {
-        MSBuildLocator.RegisterDefaults();
-    }
-
     public static void generate_compile_commands()
     {
         // ----- 16. Generate compile_commands.json -----
