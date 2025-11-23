@@ -5,7 +5,9 @@ using Microsoft.VisualStudio.SolutionPersistence.Serializer;
 
 public class MSBuild
 {
-    public static string? exe()
+    public static string? exe { get; } = get_msbuild_path();
+
+    private static string? get_msbuild_path()
     {
         using var process = Process.Start(new ProcessStartInfo()
         {
@@ -26,7 +28,7 @@ public class MSBuild
 
     public static bool build_debug(string? working_directory)
     {
-        using var process = Process.Start(string.IsNullOrEmpty(working_directory) ? new ProcessStartInfo() { FileName = exe() } : new ProcessStartInfo() { FileName = exe(), WorkingDirectory = working_directory });
+        using var process = Process.Start(string.IsNullOrEmpty(working_directory) ? new ProcessStartInfo() { FileName = exe } : new ProcessStartInfo() { FileName = exe, WorkingDirectory = working_directory });
         process?.WaitForExit();
 
         return true;
@@ -34,7 +36,7 @@ public class MSBuild
 
     public static bool build_release(string? working_directory)
     {
-        using var process = Process.Start(string.IsNullOrEmpty(working_directory) ? new ProcessStartInfo() { FileName = exe() } : new ProcessStartInfo() { FileName = exe(), WorkingDirectory = working_directory, Arguments = "/p:Configuration=Release" });
+        using var process = Process.Start(string.IsNullOrEmpty(working_directory) ? new ProcessStartInfo() { FileName = exe } : new ProcessStartInfo() { FileName = exe, WorkingDirectory = working_directory, Arguments = "/p:Configuration=Release" });
         process?.WaitForExit();
 
         return true;
