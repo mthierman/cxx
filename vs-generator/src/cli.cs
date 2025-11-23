@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Diagnostics;
+// using Microsoft.Build.Evaluation;
 
 public class App
 {
@@ -27,6 +28,9 @@ public class App
                 var start_info = new ProcessStartInfo() { FileName = "msbuild", WorkingDirectory = build_dir };
                 using var process = Process.Start(start_info);
                 process?.WaitForExit();
+                // var pc = new ProjectCollection();
+                // var project = pc.LoadProject(Path.Combine(build_dir, "app.vcxproj"));
+                // project.Build();
             }
         });
 
