@@ -17,7 +17,7 @@ public class App
     private static Dictionary<string, Command> sub_command = new Dictionary<string, Command>
     {
         ["gen"] = new Command("gen", "Generate build"),
-        ["build"] = new Command("build", "Build debug"),
+        ["debug"] = new Command("debug", "Build debug"),
         ["release"] = new Command("release", "Build release"),
         ["clean"] = new Command("clean", "Clean build")
     };
@@ -35,7 +35,7 @@ public class App
         });
 
 
-        sub_command["build"].SetAction(async parseResult =>
+        sub_command["debug"].SetAction(async parseResult =>
         {
             return await MSBuild.build(MSBuild.BuildConfiguration.Debug) ? 0 : 1;
         });
