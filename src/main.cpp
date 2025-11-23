@@ -1,4 +1,4 @@
-#include <print>
+import std;
 import my_module;
 
 // https://learn.microsoft.com/en-us/cpp/c-language/using-wmain
