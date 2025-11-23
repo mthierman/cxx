@@ -40,10 +40,10 @@ public class App
         });
 
         Command release = new("release", "Build release") { };
-        root_command.Subcommands.Add(build);
-        build.SetAction(async parseResult =>
+        root_command.Subcommands.Add(release);
+        release.SetAction(async parseResult =>
         {
-            using var process = Process.Start(new ProcessStartInfo() { FileName = MSBuild.exe(), WorkingDirectory = build_dir });
+            using var process = Process.Start(new ProcessStartInfo() { FileName = MSBuild.exe(), WorkingDirectory = build_dir, Arguments = "/p:Configuration=Release" });
             process?.WaitForExit();
         });
 
