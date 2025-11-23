@@ -4,32 +4,47 @@ using System.Reflection;
 
 public class App
 {
-    public static int run(string[] args)
+    private static readonly string build_dir = Path.Combine(Environment.CurrentDirectory, "build");
+
+    public int run(string[] args)
     {
+        if (!Directory.Exists(build_dir))
+        {
+            Directory.CreateDirectory(build_dir);
+
+            if (!Directory.Exists(build_dir))
+            {
+                return 1;
+            }
+        }
+
         var version = Assembly.GetExecutingAssembly()
                       .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
                       .InformationalVersion;
 
         RootCommand root_command = new($"vs-generator {version}");
 
-        Command gen = new("gen", "Generate build files") { };
+        Command gen = new("gen", "Generate build") { };
         root_command.Subcommands.Add(gen);
         gen.SetAction(async parseResult =>
         {
             await MSBuild.generate_project();
         });
 
-        Command build = new("build", "Build project") { };
+        Command build = new("build", "Build debug") { };
         root_command.Subcommands.Add(build);
         build.SetAction(async parseResult =>
         {
-            var build_dir = Path.Combine(Environment.CurrentDirectory, "build");
+            using var process = Process.Start(new ProcessStartInfo() { FileName = MSBuild.exe(), WorkingDirectory = build_dir });
+            process?.WaitForExit();
+        });
 
-            if (Directory.Exists(build_dir))
-            {
-                using var process = Process.Start(new ProcessStartInfo() { FileName = MSBuild.exe(), WorkingDirectory = build_dir });
-                process?.WaitForExit();
-            }
+        Command release = new("release", "Build release") { };
+        root_command.Subcommands.Add(build);
+        build.SetAction(async parseResult =>
+        {
+            using var process = Process.Start(new ProcessStartInfo() { FileName = MSBuild.exe(), WorkingDirectory = build_dir });
+            process?.WaitForExit();
         });
 
         return root_command.Parse(args).Invoke();
