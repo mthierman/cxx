@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Reflection;
 using Microsoft.Build.Construction;
 using Microsoft.VisualStudio.SolutionPersistence.Model;
 using Microsoft.VisualStudio.SolutionPersistence.Serializer;
@@ -14,10 +13,6 @@ public class MSBuild
         public static string src_dir => Path.Combine(base_dir, "src");
         public static string build_dir => Path.Combine(base_dir, "build");
     }
-
-    public static string version { get; } = Assembly.GetExecutingAssembly()
-                  .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-                  .InformationalVersion ?? string.Empty;
 
     static MSBuild()
     {
@@ -249,7 +244,7 @@ public class MSBuild
         if (!Directory.Exists(Paths.build_dir))
             Directory.CreateDirectory(Paths.build_dir);
 
-        var start_info = new ProcessStartInfo() { FileName = Paths.exe, WorkingDirectory = App.build_dir, Arguments = config == BuildConfiguration.Release ? "/p:Configuration=Release" : string.Empty };
+        var start_info = new ProcessStartInfo() { FileName = Paths.exe, WorkingDirectory = Paths.build_dir, Arguments = config == BuildConfiguration.Release ? "/p:Configuration=Release" : string.Empty };
         Process.Start(start_info)?.WaitForExit();
 
         return true;
