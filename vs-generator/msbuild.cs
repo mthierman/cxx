@@ -259,12 +259,14 @@ public class MSBuild
         if (!await Generate())
             return false;
 
-        var configuration = config == BuildConfiguration.Debug ? "Debug" : "Release";
-        var arguments = $"/p:Configuration={configuration} /p:Platform=x64";
+        if (string.IsNullOrWhiteSpace(Paths.exe))
+            throw new InvalidOperationException("MSBuild path not set.");
 
-        Process.Start(new ProcessStartInfo { FileName = Paths.exe, WorkingDirectory = Paths.build_dir, Arguments = arguments })?.WaitForExit();
+        var args = $"/p:Configuration={(config == BuildConfiguration.Debug ? "Debug" : "Release")} /p:Platform=x64";
+        var process = Process.Start(new ProcessStartInfo(Paths.exe, args) { WorkingDirectory = Paths.build_dir }) ?? throw new InvalidOperationException("Failed to start MSBuild");
+        process.WaitForExit();
 
-        return true;
+        return process.ExitCode == 0;
     }
 
     public static bool Clean()
