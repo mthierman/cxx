@@ -13,6 +13,9 @@ public class MSBuild
 
     public static class Paths
     {
+        public static string? vswhere { get; } = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            "Microsoft Visual Studio\\Installer\\vswhere.exe");
         public static string? exe;
         public static string base_dir { get; } = Environment.CurrentDirectory;
         public static string src_dir => Path.Combine(base_dir, "src");
@@ -21,26 +24,47 @@ public class MSBuild
 
     static MSBuild()
     {
-        var vswhere = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Microsoft Visual Studio\\Installer\\vswhere.exe");
+        if (!File.Exists(Paths.vswhere))
+            return;
 
-        if (File.Exists(vswhere))
+        using var process = new Process
         {
-            using var process = Process.Start(new ProcessStartInfo()
+            StartInfo = new ProcessStartInfo
             {
-                FileName = vswhere,
+                FileName = Paths.vswhere,
                 Arguments = "-latest -requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\amd64\\MSBuild.exe",
                 RedirectStandardOutput = true,
-                UseShellExecute = false
-            });
-
-            if (process != null)
-            {
-                var output = process?.StandardOutput.ReadToEnd();
-                process?.WaitForExit();
-
-                var path = output?.Split('\r', '\n', StringSplitOptions.RemoveEmptyEntries)[0];
-                Paths.exe = string.IsNullOrWhiteSpace(path) ? null : path;
+                RedirectStandardError = true, // optional but recommended
+                UseShellExecute = false,
+                CreateNoWindow = true
             }
+        };
+
+        try
+        {
+            process.Start();
+
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (!string.IsNullOrWhiteSpace(error))
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine($"vswhere error: {error}");
+            }
+
+            var path = output?
+                .Split('\r', '\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .FirstOrDefault();
+
+            Paths.exe = string.IsNullOrWhiteSpace(path) ? null : path;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to start vswhere: {ex.Message}");
+            Paths.exe = null;
         }
     }
 

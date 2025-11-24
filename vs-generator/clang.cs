@@ -22,7 +22,7 @@ public class Clang
             await semaphore.WaitAsync();
             try
             {
-                var process = new Process
+                using var process = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
@@ -30,8 +30,6 @@ public class Clang
                         Arguments = $"-i \"{file}\"",
                         RedirectStandardError = true,
                         RedirectStandardOutput = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
                     }
                 };
 
@@ -42,13 +40,17 @@ public class Clang
                 await process.WaitForExitAsync();
 
                 if (!string.IsNullOrWhiteSpace(error))
-                    Console.WriteLine($"Error formatting {file}: {error}");
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Error.WriteLine($"Error formatting {file}: {error}");
+                }
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.Error.WriteLine($"✓ {file}");
             }
             catch (Exception ex)
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Failed to format {file}: {ex.Message}");
             }
             finally
