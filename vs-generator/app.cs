@@ -23,7 +23,7 @@ public class App
         ["release"] = new Command("release", "Build release"),
         ["clean"] = new Command("clean", "Clean build"),
         ["run"] = new Command("run", "Run build"),
-        ["format"] = new Command("format", "Format sources")
+        ["format"] = new Command("format", "Format sources"),
     };
 
     static App()
