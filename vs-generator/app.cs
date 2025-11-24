@@ -17,6 +17,7 @@ public class App
     private static RootCommand root_command { get; } = new RootCommand($"vs-generator {version}");
     private static Dictionary<string, Command> sub_command = new Dictionary<string, Command>
     {
+        ["new"] = new Command("new", "Scaffold project"),
         ["gen"] = new Command("gen", "Generate build"),
         ["install"] = new Command("install", "Install dependencies"),
         ["debug"] = new Command("debug", "Build debug"),
@@ -32,6 +33,11 @@ public class App
         {
             root_command.Subcommands.Add(command);
         }
+
+        sub_command["new"].SetAction(async parseResult =>
+        {
+            return 0;
+        });
 
         sub_command["gen"].SetAction(async parseResult =>
         {
