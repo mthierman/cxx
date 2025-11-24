@@ -16,7 +16,7 @@ public class MSBuild
         public static string? vswhere { get; } = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
             "Microsoft Visual Studio\\Installer\\vswhere.exe");
-        public static string? exe;
+        public static string MSBuild { get; set; } = string.Empty;
         public static string base_dir { get; } = Environment.CurrentDirectory;
         public static string src_dir => Path.Combine(base_dir, "src");
         public static string build_dir => Path.Combine(base_dir, "build");
@@ -45,10 +45,10 @@ public class MSBuild
             .Select(p => p.Trim())
             .FirstOrDefault();
 
-        Paths.exe = string.IsNullOrWhiteSpace(path) ? null : path;
+        if (string.IsNullOrWhiteSpace(path))
+            throw new FileNotFoundException($"MSBuild.exe not found: {Paths.MSBuild}");
 
-        if (Paths.exe == null)
-            throw new FileNotFoundException("MSBuild.exe not found by vswhere");
+        Paths.MSBuild = path;
     }
 
     private static async Task GenerateSolution()
@@ -242,11 +242,11 @@ public class MSBuild
         if (!await Generate())
             return false;
 
-        if (string.IsNullOrWhiteSpace(Paths.exe))
+        if (string.IsNullOrWhiteSpace(Paths.MSBuild))
             throw new InvalidOperationException("MSBuild path not set.");
 
         var args = $"/p:Configuration={(config == BuildConfiguration.Debug ? "Debug" : "Release")} /p:Platform=x64";
-        var process = Process.Start(new ProcessStartInfo(Paths.exe, args) { WorkingDirectory = Paths.build_dir }) ?? throw new InvalidOperationException("Failed to start MSBuild");
+        var process = Process.Start(new ProcessStartInfo(Paths.MSBuild, args) { WorkingDirectory = Paths.build_dir }) ?? throw new InvalidOperationException("Failed to start MSBuild");
         process.WaitForExit();
 
         return process.ExitCode == 0;
