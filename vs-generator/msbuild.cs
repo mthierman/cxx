@@ -25,47 +25,30 @@ public class MSBuild
     static MSBuild()
     {
         if (!File.Exists(Paths.vswhere))
-            return;
+            throw new FileNotFoundException($"vswhere.exe not found: {Paths.vswhere}");
 
-        using var process = new Process
+        var process = Process.Start(new ProcessStartInfo(Paths.vswhere, "-latest -requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\amd64\\MSBuild.exe")
         {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = Paths.vswhere,
-                Arguments = "-latest -requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\amd64\\MSBuild.exe",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true, // optional but recommended
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
-        };
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        });
 
-        try
-        {
-            process.Start();
+        if (process == null)
+            throw new InvalidOperationException("vswhere.exe failed to start");
 
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
+        string output = process.StandardOutput.ReadToEnd();
+        string error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
 
-            if (!string.IsNullOrWhiteSpace(error))
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine($"vswhere error: {error}");
-            }
+        var path = output?
+            .Split('\r', '\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(p => p.Trim())
+            .FirstOrDefault();
 
-            var path = output?
-                .Split('\r', '\n', StringSplitOptions.RemoveEmptyEntries)
-                .Select(p => p.Trim())
-                .FirstOrDefault();
+        Paths.exe = string.IsNullOrWhiteSpace(path) ? null : path;
 
-            Paths.exe = string.IsNullOrWhiteSpace(path) ? null : path;
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to start vswhere: {ex.Message}");
-            Paths.exe = null;
-        }
+        if (Paths.exe == null)
+            throw new FileNotFoundException("MSBuild.exe not found by vswhere");
     }
 
     private static async Task GenerateSolution()
