@@ -10,15 +10,14 @@ public class Clang
                              .Where(f => extensions.Contains(Path.GetExtension(f)))
                              .ToArray();
 
-        Console.WriteLine(JsonSerializer.Serialize(files, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        }));
+        var json = JsonSerializer.Serialize(files, new JsonSerializerOptions { WriteIndented = true });
+        Console.Out.WriteLine(json);
 
         if (files.Length == 0) return;
 
         var semaphore = new SemaphoreSlim(Environment.ProcessorCount);
 
+        Console.Error.WriteLine();
         var tasks = files.Select(async file =>
         {
             await semaphore.WaitAsync();
@@ -45,6 +44,10 @@ public class Clang
 
                 if (!string.IsNullOrWhiteSpace(error))
                     Console.WriteLine($"Error formatting {file}: {error}");
+
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Error.WriteLine($"✓ {file}");
+                Console.ResetColor();
             }
             catch (Exception ex)
             {
