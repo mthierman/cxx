@@ -47,6 +47,25 @@ public class App
 
             Process.Start(process_start_info)?.WaitForExit();
 
+            if (!Directory.Exists(MSBuild.Paths.src_dir))
+                Directory.CreateDirectory(MSBuild.Paths.src_dir);
+
+            var app_cpp = Path.Combine(MSBuild.Paths.src_dir, "app.cpp");
+
+            if (!File.Exists(app_cpp))
+            {
+                var app_content = @"
+#include <print>
+
+int main() {
+    std::println(""Hello, World!"");
+
+    return 0;
+}
+";
+                await File.WriteAllTextAsync(app_cpp, app_content.Trim());
+            }
+
             return 0;
         });
 
