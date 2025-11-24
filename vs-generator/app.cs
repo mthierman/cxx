@@ -36,6 +36,15 @@ public class App
 
         sub_command["new"].SetAction(async parseResult =>
         {
+            if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any())
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine("Directory is not empty");
+                Console.ResetColor();
+
+                return 1;
+            }
+
             var working_directory = Environment.CurrentDirectory;
             var manifest_file = Path.Combine(working_directory, "cv.jsonc");
             var vcpkg_manifest = Path.Combine(working_directory, "vcpkg.json");
