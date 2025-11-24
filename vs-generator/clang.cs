@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 
 public class Clang
 {
@@ -8,6 +9,12 @@ public class Clang
         var files = Directory.GetFiles(MSBuild.Paths.src_dir, "*.*", SearchOption.AllDirectories)
                              .Where(f => extensions.Contains(Path.GetExtension(f)))
                              .ToArray();
+
+        Console.WriteLine("Files to format:");
+        Console.WriteLine(JsonSerializer.Serialize(files, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        }));
 
         if (files.Length == 0) return;
 
@@ -39,8 +46,6 @@ public class Clang
 
                 if (!string.IsNullOrWhiteSpace(error))
                     Console.WriteLine($"Error formatting {file}: {error}");
-
-                Console.WriteLine($"Formatted {file}");
             }
             catch (Exception ex)
             {
