@@ -55,14 +55,14 @@ public class App
             if (!File.Exists(app_cpp))
             {
                 await File.WriteAllTextAsync(app_cpp, @"
-                    #include <print>
+#include <print>
 
-                    int main() {
-                        std::println(""Hello, World!"");
+auto wmain() -> int {
+    std::println(""Hello, World!"");
 
-                        return 0;
-                    }
-                    ".Trim());
+    return 0;
+}
+".Trim());
             }
 
             return 0;
