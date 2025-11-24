@@ -46,7 +46,6 @@ public class Clang
 
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.Error.WriteLine($"✓ {file}");
-                Console.ResetColor();
             }
             catch (Exception ex)
             {
@@ -59,5 +58,7 @@ public class Clang
         }).ToArray();
 
         await Task.WhenAll(tasks);
+
+        Console.ResetColor();
     }
 }
