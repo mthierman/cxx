@@ -90,6 +90,7 @@ public static class App
 
     private static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {Version}");
     private static Argument<MSBuild.BuildConfiguration> BuildConfiguration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
+    private static Argument<string[]> MSBuildArguments = new Argument<string[]>("msbuild_arguments") { Arity = ArgumentArity.ZeroOrMore };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
         ["new"] = new Command("new", "New project"),
@@ -100,6 +101,7 @@ public static class App
         ["publish"] = new Command("publish", "Publish project"),
         ["clean"] = new Command("clean", "Clean project"),
         ["format"] = new Command("format", "Format project sources"),
+        ["msbuild"] = new Command("msbuild", "MSBuild command") { MSBuildArguments },
     };
 
     static App()
@@ -153,6 +155,37 @@ public static class App
             await Clang.FormatAsync();
 
             return 0;
+        });
+
+        SubCommand["msbuild"].SetAction(async parseResult =>
+        {
+            if (!Paths.Tools.HasMSBuild)
+            {
+                Console.WriteLine("MSBuild.exe not found");
+                return 1;
+            }
+
+            var args = parseResult.GetValue<string[]>("msbuild_arguments") ?? Array.Empty<string>();
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = Paths.Tools.MSBuild,
+                Arguments = string.Join(" ", args),
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+
+            using var process = new Process { StartInfo = startInfo };
+            process.OutputDataReceived += (s, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
+            process.ErrorDataReceived += (s, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
+
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            await process.WaitForExitAsync();
+
+            return process.ExitCode;
         });
     }
 
