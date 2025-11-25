@@ -17,13 +17,13 @@ public class App
               .InformationalVersion ?? string.Empty;
 
     private static RootCommand root_command { get; } = new RootCommand($"vs-generator {version}");
+    private static Argument<MSBuild.BuildConfiguration> build_configuration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
     private static Dictionary<string, Command> sub_command = new Dictionary<string, Command>
     {
         ["new"] = new Command("new", "Scaffold project"),
         ["install"] = new Command("install", "Install dependencies"),
         ["generate"] = new Command("generate", "Generate build"),
-        ["debug"] = new Command("debug", "Build debug"),
-        ["release"] = new Command("release", "Build release"),
+        ["build"] = new Command("build", "Build") { build_configuration },
         ["clean"] = new Command("clean", "Clean build"),
         ["run"] = new Command("run", "Run build"),
         ["format"] = new Command("format", "Format sources"),
@@ -96,19 +96,9 @@ auto wmain() -> int {
             return (await MSBuild.Generate()) ? 0 : 1;
         });
 
-        sub_command["debug"].SetAction(async parseResult =>
+        sub_command["build"].SetAction(async parseResult =>
         {
-            return await MSBuild.Build(MSBuild.BuildConfiguration.Debug) ? 0 : 1;
-        });
-
-        sub_command["release"].SetAction(async parseResult =>
-        {
-            return await MSBuild.Build(MSBuild.BuildConfiguration.Release) ? 0 : 1;
-        });
-
-        sub_command["clean"].SetAction(async parseResult =>
-        {
-            return MSBuild.Clean() ? 0 : 1;
+            return await MSBuild.Build(parseResult.GetValue(build_configuration)) ? 0 : 1;
         });
 
         sub_command["run"].SetAction(async parseResult =>
@@ -118,6 +108,11 @@ auto wmain() -> int {
             Process.Start(new ProcessStartInfo(Path.Combine(Paths.build, "debug", "app.exe")))?.WaitForExit();
 
             return 0;
+        });
+
+        sub_command["clean"].SetAction(async parseResult =>
+        {
+            return MSBuild.Clean() ? 0 : 1;
         });
 
         sub_command["format"].SetAction(async parseResult =>
