@@ -5,6 +5,7 @@ using static App;
 public class Clang
 {
     private static SemaphoreSlim semaphore = new SemaphoreSlim(Environment.ProcessorCount);
+
     public static async Task FormatAsync()
     {
         var extensions = new[] { ".cpp", ".c", ".h", ".hpp", ".ixx" };
