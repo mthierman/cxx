@@ -12,7 +12,7 @@ public static partial class App
 
     public static string version { get; } = Assembly.GetExecutingAssembly()
               .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-              .InformationalVersion ?? string.Empty;
+              .InformationalVersion ?? "0.0.0";
     public static string manifest_file = "cxx.jsonc";
 
     private static RootCommand root_command { get; } = new RootCommand($"C++ build tool\nversion {version}");
