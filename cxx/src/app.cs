@@ -1,6 +1,4 @@
 using System.CommandLine;
-// using System.CommandLine.Completions;
-// using System.CommandLine.Parsing;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -16,7 +14,7 @@ public class App
               .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
               .InformationalVersion ?? string.Empty;
 
-    private static RootCommand root_command { get; } = new RootCommand($"vs-generator {version}");
+    private static RootCommand root_command { get; } = new RootCommand($"cxx {version}");
     private static Argument<MSBuild.BuildConfiguration> build_configuration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
     private static Dictionary<string, Command> sub_command = new Dictionary<string, Command>
     {
