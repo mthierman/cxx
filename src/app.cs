@@ -25,22 +25,14 @@ public static class App
 
     private static EnvironmentPaths InitializeEnvironmentPaths()
     {
-        // Find manifest & root
         var root = FindRepoRoot() ?? throw new FileNotFoundException($"{ManifestFile} not found in any parent directory");
         var manifest = Path.Combine(root, ManifestFile);
 
-        // Find vswhere
         var vswhere = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
             @"Microsoft Visual Studio\Installer\vswhere.exe");
-
-        // Find MSBuild
         var msbuild = FindMSBuild(vswhere) ?? string.Empty;
-
-        // Find clang-format
         var clangFormat = FindClangFormat() ?? string.Empty;
-
-        // Find vcpkg
         var vcpkgRoot = Environment.GetEnvironmentVariable("VCPKG_ROOT");
         var vcpkg = string.Empty;
 
@@ -50,11 +42,8 @@ public static class App
                 vcpkg = Path.Combine(vcpkgRoot, "vcpkg.exe");
         }
 
-        // Set src/build paths
         var src = Path.Combine(root, "src");
         var build = Path.Combine(root, "build");
-
-        // Set VS paths
         var solutionFile = Path.Combine(root, "build", "app.slnx");
         var projectFile = Path.Combine(root, "build", "app.vcxproj");
 
