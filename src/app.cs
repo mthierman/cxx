@@ -15,7 +15,7 @@ public static partial class App
               .InformationalVersion ?? string.Empty;
     public static string manifest_file = "cxx.jsonc";
 
-    private static RootCommand root_command { get; } = new RootCommand($"cxx {version}");
+    private static RootCommand root_command { get; } = new RootCommand($"C++ build tool\nversion {version}");
     private static Argument<MSBuild.BuildConfiguration> build_configuration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
     private static Dictionary<string, Command> sub_command = new Dictionary<string, Command>
     {
