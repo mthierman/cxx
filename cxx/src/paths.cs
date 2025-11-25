@@ -2,31 +2,25 @@ using System.Diagnostics;
 
 public static class Paths
 {
-    private static readonly Lazy<Config> _config = new Lazy<Config>(Initialize);
+    private static readonly Lazy<EnvironmentPaths> _environmentPaths = new Lazy<EnvironmentPaths>(Initialize);
 
-    public static string vswhere => _config.Value.Vswhere;
-    public static string MSBuild => _config.Value.MSBuild;
-    public static string vcpkg => _config.Value.Vcpkg;
-    public static string root => _config.Value.Root;
+    public static string vswhere => _environmentPaths.Value.vswhere;
+    public static string msbuild => _environmentPaths.Value.msbuild;
+    public static string vcpkg => _environmentPaths.Value.vcpkg;
+    public static string root => _environmentPaths.Value.root;
     public static string src => Path.Combine(root, "src");
     public static string build => Path.Combine(root, "build");
     public static string solution_file => Path.Combine(root, "build", "app.slnx");
     public static string project_file => Path.Combine(root, "build", "app.vcxproj");
 
-    // ------------------------------------------------------------
-    // Strongly typed config object initialized exactly once
-    // ------------------------------------------------------------
-    private sealed record Config(
-        string Root,
-        string Vswhere,
-        string MSBuild,
-        string Vcpkg
+    private sealed record EnvironmentPaths(
+        string root,
+        string vswhere,
+        string msbuild,
+        string vcpkg
     );
 
-    // ------------------------------------------------------------
-    // Initialization logic (cleaned but same logic as your version)
-    // ------------------------------------------------------------
-    private static Config Initialize()
+    private static EnvironmentPaths Initialize()
     {
         var root_path = LocateRepoRoot();
 
@@ -45,19 +39,16 @@ public static class Paths
         if (string.IsNullOrWhiteSpace(vcpkg_root))
             throw new Exception("VCPKG_ROOT is not set");
 
-        if (!File.Exists(Path.Combine(vcpkg_root, "vcpkg.exe")))
-            throw new FileNotFoundException($"vcpkg.exe not found in VCPKG_ROOT: {vcpkg_root}");
-
         var vcpkg_path = Path.Combine(vcpkg_root, "vcpkg.exe");
+
+        if (!File.Exists(vcpkg_path))
+            throw new FileNotFoundException($"vcpkg.exe not found in VCPKG_ROOT: {vcpkg_path}");
 
         var msbuild_path = LocateMSBuild(vswhere_path);
 
-        return new Config(root_path, vswhere_path, msbuild_path, vcpkg_path);
+        return new(root_path, vswhere_path, msbuild_path, vcpkg_path);
     }
 
-    // ------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------
     private static string LocateRepoRoot()
     {
         string? current = Environment.CurrentDirectory;
