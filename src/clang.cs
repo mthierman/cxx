@@ -4,7 +4,7 @@ using static App;
 
 public class Clang
 {
-    private static readonly SemaphoreSlim console_lock = new SemaphoreSlim(1, 1);
+    private static readonly SemaphoreSlim ConsoleLock = new SemaphoreSlim(1, 1);
 
     private static async Task FormatFileAsync(string file, CancellationToken ct)
     {
@@ -68,7 +68,7 @@ public class Clang
                 {
                     await FormatFileAsync(file, token);
 
-                    await console_lock.WaitAsync(token);
+                    await ConsoleLock.WaitAsync(token);
 
                     try
                     {
@@ -78,12 +78,12 @@ public class Clang
                     finally
                     {
                         Console.ResetColor();
-                        console_lock.Release();
+                        ConsoleLock.Release();
                     }
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    await console_lock.WaitAsync(token);
+                    await ConsoleLock.WaitAsync(token);
 
                     try
                     {
@@ -93,7 +93,7 @@ public class Clang
                     finally
                     {
                         Console.ResetColor();
-                        console_lock.Release();
+                        ConsoleLock.Release();
                     }
                 }
             });
@@ -104,7 +104,7 @@ public class Clang
         }
     }
 
-    public static void generate()
+    public static void Generate()
     {
         // ----- 16. Generate compile_commands.json -----
         //var compileCommands = new List<Dictionary<string, string>>();
