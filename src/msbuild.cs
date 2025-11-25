@@ -12,7 +12,7 @@ public class MSBuild
         Release
     }
 
-    private static async Task GenerateSolution()
+    private static async Task<int> GenerateSolution()
     {
         var solution_model = new SolutionModel();
 
@@ -24,9 +24,11 @@ public class MSBuild
         solution_project.Id = Guid.NewGuid();
 
         await SolutionSerializers.SlnXml.SaveAsync(Paths.solution_file, solution_model, new CancellationToken());
+
+        return 0;
     }
 
-    public static async Task<bool> Generate()
+    public static async Task<int> Generate()
     {
         await GenerateSolution();
 
@@ -193,15 +195,15 @@ public class MSBuild
 
         project.Save(Paths.project_file);
 
-        return true;
+        return 0;
     }
 
-    public static async Task<bool> Build(BuildConfiguration config)
+    public static async Task<int> Build(BuildConfiguration config)
     {
         Directory.CreateDirectory(Paths.build);
 
-        if (!await Generate())
-            return false;
+        if (await Generate() != 0)
+            return 1;
 
         if (string.IsNullOrWhiteSpace(Paths.msbuild))
             throw new InvalidOperationException("MSBuild path not set.");
@@ -212,16 +214,16 @@ public class MSBuild
 
         Console.Error.WriteLine();
 
-        return process.ExitCode == 0;
+        return 0;
     }
 
-    public static bool Clean()
+    public static int Clean()
     {
         if (!Directory.Exists(Paths.build))
-            return false;
+            return 1;
 
         Directory.Delete(Paths.build, true);
 
-        return true;
+        return 0;
     }
 }

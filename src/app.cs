@@ -4,12 +4,6 @@ using System.Reflection;
 
 public static partial class App
 {
-    public enum ExitCode : int
-    {
-        Success = 0,
-        GeneralError = 1,
-    }
-
     public static string version { get; } = Assembly.GetExecutingAssembly()
               .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
               .InformationalVersion ?? "0.0.0";
@@ -48,12 +42,12 @@ public static partial class App
 
         sub_command["generate"].SetAction(async parseResult =>
         {
-            return (await MSBuild.Generate()) ? 0 : 1;
+            return await MSBuild.Generate();
         });
 
         sub_command["build"].SetAction(async parseResult =>
         {
-            return await MSBuild.Build(parseResult.GetValue(build_configuration)) ? 0 : 1;
+            return await MSBuild.Build(parseResult.GetValue(build_configuration));
         });
 
         sub_command["run"].SetAction(async parseResult =>
@@ -72,7 +66,7 @@ public static partial class App
 
         sub_command["clean"].SetAction(async parseResult =>
         {
-            return MSBuild.Clean() ? 0 : 1;
+            return MSBuild.Clean();
         });
 
         sub_command["format"].SetAction(async parseResult =>
