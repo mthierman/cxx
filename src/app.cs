@@ -66,7 +66,7 @@ public static class App
 
         var msbuild = FindMSBuild(vswhere);
 
-        var clangFormat = FindClangFormat();
+        var clangFormat = FindOnPath("clang-format.exe");
 
         string? vcpkg = null;
         var vcpkgRoot = Environment.GetEnvironmentVariable("VCPKG_ROOT");
@@ -75,6 +75,8 @@ public static class App
             var vcpkgExe = Path.Combine(vcpkgRoot, "vcpkg.exe");
             if (File.Exists(vcpkgExe))
                 vcpkg = vcpkgExe;
+            else
+                vcpkg = FindOnPath("vcpkg.exe");
         }
 
         var toolsPaths = new ToolsPaths
@@ -170,6 +172,36 @@ public static class App
         return RootCommand.Parse(args).Invoke();
     }
 
+    public static async Task<int> RunTask(string command, string[] args)
+    {
+        if (!App.Paths.Tools.HasMSBuild)
+        {
+            Console.WriteLine("MSBuild.exe not found");
+            return 1;
+        }
+
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = App.Paths.Tools.MSBuild,
+            Arguments = string.Join(" ", args),
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        using var process = new Process { StartInfo = startInfo };
+        process.OutputDataReceived += (s, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
+        process.ErrorDataReceived += (s, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
+
+        process.Start();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+
+        await process.WaitForExitAsync();
+
+        return 0;
+    }
+
     private static async Task<int> NewProject()
     {
         if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any())
@@ -237,6 +269,25 @@ auto wmain() -> int {
         return 0;
     }
 
+    private static string? FindOnPath(string command)
+    {
+        var pathEnv = Environment.GetEnvironmentVariable("PATH");
+
+        if (string.IsNullOrEmpty(pathEnv))
+            return null;
+
+        string[] paths = pathEnv.Split(Path.PathSeparator);
+
+        foreach (var dir in paths)
+        {
+            string fullPath = Path.Combine(dir, command);
+            if (File.Exists(fullPath))
+                return fullPath;
+        }
+
+        return null;
+    }
+
     private static string? FindRepoRoot()
     {
         for (var cwd = Environment.CurrentDirectory;
@@ -270,24 +321,5 @@ auto wmain() -> int {
             .FirstOrDefault();
 
         return string.IsNullOrWhiteSpace(found) ? null : found;
-    }
-
-    public static string? FindClangFormat()
-    {
-        var pathEnv = Environment.GetEnvironmentVariable("PATH");
-
-        if (string.IsNullOrEmpty(pathEnv))
-            return null;
-
-        string[] paths = pathEnv.Split(Path.PathSeparator);
-
-        foreach (var dir in paths)
-        {
-            string fullPath = Path.Combine(dir, "clang-format.exe");
-            if (File.Exists(fullPath))
-                return fullPath;
-        }
-
-        return null;
     }
 }
