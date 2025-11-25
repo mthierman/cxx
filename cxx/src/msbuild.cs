@@ -2,6 +2,7 @@
 using Microsoft.Build.Construction;
 using Microsoft.VisualStudio.SolutionPersistence.Model;
 using Microsoft.VisualStudio.SolutionPersistence.Serializer;
+using static App;
 
 public class MSBuild
 {
