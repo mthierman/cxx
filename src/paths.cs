@@ -65,7 +65,6 @@ public partial class App
             !string.IsNullOrEmpty(current_directory);
             current_directory = Directory.GetParent(current_directory)?.FullName)
         {
-            Console.WriteLine(current_directory);
             if (File.Exists(Path.Combine(current_directory, manifest_file)))
                 return current_directory;
         }
