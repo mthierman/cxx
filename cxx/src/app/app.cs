@@ -37,52 +37,7 @@ public static partial class App
 
         sub_command["new"].SetAction(async parseResult =>
         {
-            if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any())
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine("Directory is not empty");
-                Console.ResetColor();
-
-                return 1;
-            }
-
-            var working_directory = Environment.CurrentDirectory;
-            var manifest_file = Path.Combine(working_directory, "cxx.jsonc");
-            var vcpkg_manifest = Path.Combine(working_directory, "vcpkg.json");
-            var vcpkg_configuration = Path.Combine(working_directory, "vcpkg-configuration.json");
-
-            if (File.Exists(manifest_file) || File.Exists(vcpkg_manifest) || File.Exists(vcpkg_configuration))
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine("Project already has a manifest file");
-                Console.ResetColor();
-
-                return 1;
-            }
-
-            await File.WriteAllTextAsync(manifest_file, "{}");
-
-            VCPkg.Start("new --application");
-
-            if (!Directory.Exists(Paths.src))
-                Directory.CreateDirectory(Paths.src);
-
-            var app_cpp = Path.Combine(Paths.src, "app.cpp");
-
-            if (!File.Exists(app_cpp))
-            {
-                await File.WriteAllTextAsync(app_cpp, @"
-#include <print>
-
-auto wmain() -> int {
-    std::println(""Hello, World!"");
-
-    return 0;
-}
-".Trim());
-            }
-
-            return 0;
+            return await NewProject();
         });
 
         sub_command["install"].SetAction(async parseResult =>
@@ -120,6 +75,56 @@ auto wmain() -> int {
 
             return 0;
         });
+    }
+
+    private static async Task<int> NewProject()
+    {
+        if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any())
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine("Directory is not empty");
+            Console.ResetColor();
+
+            return 1;
+        }
+
+        var working_directory = Environment.CurrentDirectory;
+        var blank_manifest_file = Path.Combine(working_directory, "cxx.jsonc");
+        var vcpkg_manifest = Path.Combine(working_directory, "vcpkg.json");
+        var vcpkg_configuration = Path.Combine(working_directory, "vcpkg-configuration.json");
+
+        if (File.Exists(manifest_file) || File.Exists(vcpkg_manifest) || File.Exists(vcpkg_configuration))
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine("Project already has a manifest file");
+            Console.ResetColor();
+
+            return 1;
+        }
+
+        await File.WriteAllTextAsync(blank_manifest_file, "{}");
+
+        VCPkg.Start("new --application");
+
+        if (!Directory.Exists(Paths.src))
+            Directory.CreateDirectory(Paths.src);
+
+        var app_cpp = Path.Combine(Paths.src, "app.cpp");
+
+        if (!File.Exists(app_cpp))
+        {
+            await File.WriteAllTextAsync(app_cpp, @"
+#include <print>
+
+auto wmain() -> int {
+    std::println(""Hello, World!"");
+
+    return 0;
+}
+".Trim());
+        }
+
+        return 0;
     }
 
     public static int parse_args(string[] args)
