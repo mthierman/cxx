@@ -64,6 +64,7 @@ public class MSBuild
                 group.AddProperty("UseDebugLibraries", config == "Debug" ? "true" : "false");
                 group.AddProperty("PlatformToolset", "v145");
                 group.AddProperty("CharacterSet", "Unicode");
+                group.AddProperty("EnableUnitySupport", "false");
                 group.AddProperty("IntDir", $@"$(SolutionDir)\{config.ToLowerInvariant()}\obj\");
                 group.AddProperty("OutDir", $@"$(SolutionDir)\{config.ToLowerInvariant()}\");
             }
