@@ -107,12 +107,12 @@ public static class App
             return 1;
         }
 
-        var working_directory = Environment.CurrentDirectory;
-        var blank_manifest_file = Path.Combine(working_directory, "cxx.jsonc");
-        var vcpkg_manifest = Path.Combine(working_directory, "vcpkg.json");
-        var vcpkg_configuration = Path.Combine(working_directory, "vcpkg-configuration.json");
+        var cwd = Environment.CurrentDirectory;
+        var blankManifest = Path.Combine(cwd, "cxx.jsonc");
+        var vcpkgManifest = Path.Combine(cwd, "vcpkg.json");
+        var vcpkgConfig = Path.Combine(cwd, "vcpkg-configuration.json");
 
-        if (File.Exists(ManifestFile) || File.Exists(vcpkg_manifest) || File.Exists(vcpkg_configuration))
+        if (File.Exists(ManifestFile) || File.Exists(vcpkgManifest) || File.Exists(vcpkgConfig))
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine("Project already has a manifest file");
@@ -121,7 +121,7 @@ public static class App
             return 1;
         }
 
-        await File.WriteAllTextAsync(blank_manifest_file, "{}");
+        await File.WriteAllTextAsync(blankManifest, "{}");
 
         RunVcpkg("new", "--application");
 
@@ -148,17 +148,17 @@ auto wmain() -> int {
 
     public static int RunVcpkg(params string[] arguments)
     {
-        var start_info = new ProcessStartInfo("vcpkg");
+        var startInfo = new ProcessStartInfo("vcpkg");
 
         foreach (var argument in arguments)
         {
-            start_info.ArgumentList.Add(argument);
+            startInfo.ArgumentList.Add(argument);
         }
 
-        start_info.EnvironmentVariables["VCPKG_DEFAULT_TRIPLET"] = "x64-windows-static-md";
-        start_info.EnvironmentVariables["VCPKG_DEFAULT_HOST_TRIPLET"] = "x64-windows-static-md";
+        startInfo.EnvironmentVariables["VCPKG_DEFAULT_TRIPLET"] = "x64-windows-static-md";
+        startInfo.EnvironmentVariables["VCPKG_DEFAULT_HOST_TRIPLET"] = "x64-windows-static-md";
 
-        Process.Start(start_info)?.WaitForExit();
+        Process.Start(startInfo)?.WaitForExit();
 
         return 0;
     }
@@ -181,15 +181,15 @@ auto wmain() -> int {
         var msbuild = FindMSBuild(vswhere) ?? throw new FileNotFoundException($"MSBuild.exe not found");
 
         // Find vcpkg
-        var vcpkg_root = Environment.GetEnvironmentVariable("VCPKG_ROOT");
+        var vcpkgRoot = Environment.GetEnvironmentVariable("VCPKG_ROOT");
 
-        if (string.IsNullOrWhiteSpace(vcpkg_root))
+        if (string.IsNullOrWhiteSpace(vcpkgRoot))
             throw new Exception("VCPKG_ROOT is not set");
 
-        if (!Directory.Exists(vcpkg_root))
-            throw new Exception($"VCPKG_ROOT not found: {vcpkg_root}");
+        if (!Directory.Exists(vcpkgRoot))
+            throw new Exception($"VCPKG_ROOT not found: {vcpkgRoot}");
 
-        var vcpkg = Path.Combine(vcpkg_root, "vcpkg.exe");
+        var vcpkg = Path.Combine(vcpkgRoot, "vcpkg.exe");
 
         if (!File.Exists(vcpkg))
             throw new FileNotFoundException($"vcpkg.exe not found in VCPKG_ROOT: {vcpkg}");
@@ -199,20 +199,20 @@ auto wmain() -> int {
         var build = Path.Combine(root, "build");
 
         // Set VS paths
-        var solution_file = Path.Combine(root, "build", "app.slnx");
-        var project_file = Path.Combine(root, "build", "app.vcxproj");
+        var solutionFile = Path.Combine(root, "build", "app.slnx");
+        var projectFile = Path.Combine(root, "build", "app.vcxproj");
 
-        return new EnvironmentPaths(root, manifest, vswhere, msbuild, vcpkg, src, build, solution_file, project_file);
+        return new EnvironmentPaths(root, manifest, vswhere, msbuild, vcpkg, src, build, solutionFile, projectFile);
     }
 
     private static string? FindRepoRoot()
     {
-        for (var current_directory = Environment.CurrentDirectory;
-            !string.IsNullOrEmpty(current_directory);
-            current_directory = Directory.GetParent(current_directory)?.FullName)
+        for (var cwd = Environment.CurrentDirectory;
+            !string.IsNullOrEmpty(cwd);
+            cwd = Directory.GetParent(cwd)?.FullName)
         {
-            if (File.Exists(Path.Combine(current_directory, ManifestFile)))
-                return current_directory;
+            if (File.Exists(Path.Combine(cwd, ManifestFile)))
+                return cwd;
         }
 
         return null;
