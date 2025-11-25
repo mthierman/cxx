@@ -20,15 +20,20 @@ public partial class App
 
     private static EnvironmentPaths InitializeEnvironmentPaths()
     {
+        // Find manifest & root
         var root = FindRepoRoot() ?? throw new FileNotFoundException($"{manifest_file} not found in any parent directory");
         var manifest = Path.Combine(root, manifest_file);
 
+        // Find vswhere
         var vswhere = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
             @"Microsoft Visual Studio\Installer\vswhere.exe");
 
         if (!File.Exists(vswhere))
-            throw new FileNotFoundException($"vswhere.exe not found: {vswhere}");
+            throw new FileNotFoundException($"vswhere.exe not found");
+
+        // Find MSBuild
+        var msbuild = FindMSBuild(vswhere) ?? throw new FileNotFoundException($"MSBuild.exe not found");
 
         var vcpkg_root = Environment.GetEnvironmentVariable("VCPKG_ROOT");
 
@@ -42,8 +47,6 @@ public partial class App
 
         if (!File.Exists(vcpkg))
             throw new FileNotFoundException($"vcpkg.exe not found in VCPKG_ROOT: {vcpkg}");
-
-        var msbuild = LocateMSBuild(vswhere);
 
         var src = Path.Combine(root, "src");
         var build = Path.Combine(root, "build");
@@ -68,29 +71,26 @@ public partial class App
     }
 
 
-    private static string LocateMSBuild(string vswherePath)
+    private static string? FindMSBuild(string vswhere)
     {
-        var psi = new ProcessStartInfo(vswherePath,
+        using var process = Process.Start(new ProcessStartInfo(vswhere,
             "-latest -requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\amd64\\MSBuild.exe")
         {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
+            RedirectStandardOutput = true
+        });
 
-        using var process = Process.Start(psi)
-            ?? throw new InvalidOperationException("vswhere.exe failed to start");
+        if (process is null)
+            return null;
 
-        string output = process.StandardOutput.ReadToEnd();
+        var output = process.StandardOutput.ReadToEnd();
         process.WaitForExit();
 
-        string? found = output
+        var found = output
             .Split('\r', '\n', StringSplitOptions.RemoveEmptyEntries)
             .Select(s => s.Trim())
             .FirstOrDefault();
 
-        if (string.IsNullOrWhiteSpace(found))
-            throw new FileNotFoundException("MSBuild.exe not found");
-
-        return found;
+        return string.IsNullOrWhiteSpace(found) ? null : found;
     }
+
 }
