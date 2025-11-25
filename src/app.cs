@@ -4,86 +4,86 @@ using System.Reflection;
 
 public static class App
 {
-    private static RootCommand root_command { get; } = new RootCommand($"C++ build tool\nversion {version}");
-    private static Argument<MSBuild.BuildConfiguration> build_configuration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
-    private static Dictionary<string, Command> sub_command = new Dictionary<string, Command>
+    private static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {Version}");
+    private static Argument<MSBuild.BuildConfiguration> BuildConfiguration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
+    private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
         ["new"] = new Command("new", "New project"),
         ["install"] = new Command("install", "Install project dependencies"),
         ["generate"] = new Command("generate", "Generate project build"),
-        ["build"] = new Command("build", "Build project") { build_configuration },
-        ["run"] = new Command("run", "Run project") { build_configuration },
+        ["build"] = new Command("build", "Build project") { BuildConfiguration },
+        ["run"] = new Command("run", "Run project") { BuildConfiguration },
         ["publish"] = new Command("publish", "Publish project"),
         ["clean"] = new Command("clean", "Clean project"),
         ["format"] = new Command("format", "Format project sources"),
     };
 
-    public static string version { get; } = Assembly.GetExecutingAssembly()
+    public static string Version { get; } = Assembly.GetExecutingAssembly()
               .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
               .InformationalVersion ?? "0.0.0";
-    public static string manifest_file = "cxx.jsonc";
+    public static string ManifestFile = "cxx.jsonc";
     private static readonly Lazy<EnvironmentPaths> _environmentPaths = new Lazy<EnvironmentPaths>(InitializeEnvironmentPaths);
     public static EnvironmentPaths Paths => _environmentPaths.Value;
 
     public sealed record EnvironmentPaths(
-        string root,
-        string manifest,
-        string vswhere,
-        string msbuild,
-        string vcpkg,
-        string src,
-        string build,
-        string solution_file,
-        string project_file
+        string Root,
+        string Manifest,
+        string Vswhere,
+        string MSBuild,
+        string Vcpkg,
+        string Src,
+        string Build,
+        string SolutionFile,
+        string ProjectFile
     );
 
     static App()
     {
-        foreach (var command in sub_command.Values)
+        foreach (var command in SubCommand.Values)
         {
-            root_command.Subcommands.Add(command);
+            RootCommand.Subcommands.Add(command);
         }
 
-        sub_command["new"].SetAction(async parseResult =>
+        SubCommand["new"].SetAction(async parseResult =>
         {
             return await NewProject();
         });
 
-        sub_command["install"].SetAction(async parseResult =>
+        SubCommand["install"].SetAction(async parseResult =>
         {
             return RunVcpkg("install");
         });
 
-        sub_command["generate"].SetAction(async parseResult =>
+        SubCommand["generate"].SetAction(async parseResult =>
         {
             return await MSBuild.Generate();
         });
 
-        sub_command["build"].SetAction(async parseResult =>
+        SubCommand["build"].SetAction(async parseResult =>
         {
-            return await MSBuild.Build(parseResult.GetValue(build_configuration));
+            return await MSBuild.Build(parseResult.GetValue(BuildConfiguration));
         });
 
-        sub_command["run"].SetAction(async parseResult =>
+        SubCommand["run"].SetAction(async parseResult =>
         {
-            await MSBuild.Build(parseResult.GetValue(build_configuration));
+            await MSBuild.Build(parseResult.GetValue(BuildConfiguration));
 
-            Process.Start(new ProcessStartInfo(Path.Combine(Paths.build, parseResult.GetValue(build_configuration) == MSBuild.BuildConfiguration.Debug ? "debug" : "release", "app.exe")))?.WaitForExit();
+            Process.Start(new ProcessStartInfo(Path.Combine(Paths.Build, parseResult.GetValue(BuildConfiguration) == MSBuild.BuildConfiguration.Debug ? "debug" : "release", "app.exe")))?.WaitForExit();
 
             return 0;
         });
 
-        sub_command["publish"].SetAction(async parseResult =>
+        SubCommand["publish"].SetAction(async parseResult =>
         {
             return 0;
         });
 
-        sub_command["clean"].SetAction(async parseResult =>
+        SubCommand["clean"].SetAction(async parseResult =>
         {
             return MSBuild.Clean();
         });
 
-        sub_command["format"].SetAction(async parseResult =>
+        SubCommand["format"].SetAction(async parseResult =>
         {
             await Clang.FormatAsync();
 
@@ -93,7 +93,7 @@ public static class App
 
     public static int run(string[] args)
     {
-        return root_command.Parse(args).Invoke();
+        return RootCommand.Parse(args).Invoke();
     }
 
     private static async Task<int> NewProject()
@@ -112,7 +112,7 @@ public static class App
         var vcpkg_manifest = Path.Combine(working_directory, "vcpkg.json");
         var vcpkg_configuration = Path.Combine(working_directory, "vcpkg-configuration.json");
 
-        if (File.Exists(manifest_file) || File.Exists(vcpkg_manifest) || File.Exists(vcpkg_configuration))
+        if (File.Exists(ManifestFile) || File.Exists(vcpkg_manifest) || File.Exists(vcpkg_configuration))
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine("Project already has a manifest file");
@@ -125,10 +125,10 @@ public static class App
 
         RunVcpkg("new", "--application");
 
-        if (!Directory.Exists(Paths.src))
-            Directory.CreateDirectory(Paths.src);
+        if (!Directory.Exists(Paths.Src))
+            Directory.CreateDirectory(Paths.Src);
 
-        var app_cpp = Path.Combine(Paths.src, "app.cpp");
+        var app_cpp = Path.Combine(Paths.Src, "app.cpp");
 
         if (!File.Exists(app_cpp))
         {
@@ -166,8 +166,8 @@ auto wmain() -> int {
     private static EnvironmentPaths InitializeEnvironmentPaths()
     {
         // Find manifest & root
-        var root = FindRepoRoot() ?? throw new FileNotFoundException($"{manifest_file} not found in any parent directory");
-        var manifest = Path.Combine(root, manifest_file);
+        var root = FindRepoRoot() ?? throw new FileNotFoundException($"{ManifestFile} not found in any parent directory");
+        var manifest = Path.Combine(root, ManifestFile);
 
         // Find vswhere
         var vswhere = Path.Combine(
@@ -211,7 +211,7 @@ auto wmain() -> int {
             !string.IsNullOrEmpty(current_directory);
             current_directory = Directory.GetParent(current_directory)?.FullName)
         {
-            if (File.Exists(Path.Combine(current_directory, manifest_file)))
+            if (File.Exists(Path.Combine(current_directory, ManifestFile)))
                 return current_directory;
         }
 
