@@ -1,1 +1,1 @@
-﻿return App.run(args);
+﻿return App.Run(args);

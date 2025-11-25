@@ -91,7 +91,7 @@ public static class App
         });
     }
 
-    public static int run(string[] args)
+    public static int Run(string[] args)
     {
         return RootCommand.Parse(args).Invoke();
     }
