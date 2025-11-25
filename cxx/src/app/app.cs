@@ -25,6 +25,7 @@ public static partial class App
         ["build"] = new Command("build", "Build") { build_configuration },
         ["clean"] = new Command("clean", "Clean build"),
         ["run"] = new Command("run", "Build & run") { build_configuration },
+        ["publish"] = new Command("publish", "Publish"),
         ["format"] = new Command("format", "Format sources"),
     };
 
@@ -67,6 +68,11 @@ public static partial class App
         sub_command["clean"].SetAction(async parseResult =>
         {
             return MSBuild.Clean() ? 0 : 1;
+        });
+
+        sub_command["publish"].SetAction(async parseResult =>
+        {
+            return 0;
         });
 
         sub_command["format"].SetAction(async parseResult =>
