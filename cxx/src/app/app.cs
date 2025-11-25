@@ -42,7 +42,7 @@ public static partial class App
 
         sub_command["install"].SetAction(async parseResult =>
         {
-            VCPkg.Start("install");
+            return VCPkg.Start("install");
         });
 
         sub_command["generate"].SetAction(async parseResult =>

@@ -9,7 +9,7 @@ public class VCPkg
             throw new Exception("VCPKG_ROOT is not set");
     }
 
-    public static void Start(string arguments)
+    public static int Start(string arguments)
     {
         var process_start_info = new ProcessStartInfo
         {
@@ -21,5 +21,7 @@ public class VCPkg
         process_start_info.EnvironmentVariables["VCPKG_DEFAULT_HOST_TRIPLET"] = "x64-windows-static-md";
 
         Process.Start(process_start_info)?.WaitForExit();
+
+        return 0;
     }
 }
