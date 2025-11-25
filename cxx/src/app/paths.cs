@@ -35,6 +35,7 @@ public partial class App
         // Find MSBuild
         var msbuild = FindMSBuild(vswhere) ?? throw new FileNotFoundException($"MSBuild.exe not found");
 
+        // Find vcpkg
         var vcpkg_root = Environment.GetEnvironmentVariable("VCPKG_ROOT");
 
         if (string.IsNullOrWhiteSpace(vcpkg_root))
@@ -48,8 +49,11 @@ public partial class App
         if (!File.Exists(vcpkg))
             throw new FileNotFoundException($"vcpkg.exe not found in VCPKG_ROOT: {vcpkg}");
 
+        // Set src/build paths
         var src = Path.Combine(root, "src");
         var build = Path.Combine(root, "build");
+
+        // Set VS paths
         var solution_file = Path.Combine(root, "build", "app.slnx");
         var project_file = Path.Combine(root, "build", "app.vcxproj");
 
