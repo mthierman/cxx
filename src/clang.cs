@@ -1,68 +1,105 @@
 using System.Diagnostics;
-using System.Text.Json;
+// using System.Text.Json;
 using static App;
 
 public class Clang
 {
-    private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(Environment.ProcessorCount);
+    private static readonly SemaphoreSlim console_lock = new SemaphoreSlim(1, 1);
 
-    public static async Task FormatAsync()
+    private static async Task FormatFileAsync(string file, CancellationToken ct)
     {
-        var extensions = new[] { ".cpp", ".c", ".h", ".hpp", ".ixx" };
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "clang-format",
+                Arguments = $"-i \"{file}\"",
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            }
+        };
+
+        try
+        {
+            process.Start();
+            var stderrTask = process.StandardError.ReadToEndAsync(ct);
+            await process.WaitForExitAsync(ct);
+            var error = await stderrTask;
+
+            if (!string.IsNullOrWhiteSpace(error))
+            {
+                throw new Exception(error.Trim());
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited)
+                process.Kill(entireProcessTree: true);
+
+            throw;
+        }
+    }
+
+
+    public static async Task FormatAsync(CancellationToken ct = default)
+    {
+        var extensions = new[] { ".c", ".cpp", ".cxx", ".h", ".hpp", ".hxx", ".ixx" };
+
         var files = Directory.GetFiles(Paths.src, "*.*", SearchOption.AllDirectories)
                              .Where(f => extensions.Contains(Path.GetExtension(f)))
                              .ToArray();
 
-        Console.Out.WriteLine(JsonSerializer.Serialize(files, new JsonSerializerOptions { WriteIndented = true }));
+        if (files.Length == 0)
+            return;
 
-        if (files.Length == 0) return;
-
-        Console.Error.WriteLine();
-        var tasks = files.Select(async file =>
+        var options = new ParallelOptions
         {
-            await semaphore.WaitAsync();
-            try
+            MaxDegreeOfParallelism = Environment.ProcessorCount,
+            CancellationToken = ct
+        };
+
+        try
+        {
+            await Parallel.ForEachAsync(files, options, async (file, token) =>
             {
-                using var process = new Process
+                try
                 {
-                    StartInfo = new ProcessStartInfo
+                    await FormatFileAsync(file, token);
+
+                    await console_lock.WaitAsync(token);
+                    try
                     {
-                        FileName = "clang-format",
-                        Arguments = $"-i \"{file}\"",
-                        RedirectStandardError = true,
-                        RedirectStandardOutput = true,
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine($"✓ {file}");
                     }
-                };
-
-                process.Start();
-
-                string output = await process.StandardOutput.ReadToEndAsync();
-                string error = await process.StandardError.ReadToEndAsync();
-                await process.WaitForExitAsync();
-
-                if (!string.IsNullOrWhiteSpace(error))
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Error.WriteLine($"Error formatting {file}: {error}");
+                    finally
+                    {
+                        Console.ResetColor();
+                        console_lock.Release();
+                    }
                 }
-
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Error.WriteLine($"✓ {file}");
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"Failed to format {file}: {ex.Message}");
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        }).ToArray();
-
-        await Task.WhenAll(tasks);
-
-        Console.ResetColor();
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    await console_lock.WaitAsync(token);
+                    try
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Error.WriteLine($"Error formatting {file}: {ex.Message}");
+                    }
+                    finally
+                    {
+                        Console.ResetColor();
+                        console_lock.Release();
+                    }
+                }
+            });
+        }
+        finally
+        {
+            Console.ResetColor();
+        }
     }
 
     public static void generate()
