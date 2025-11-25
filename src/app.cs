@@ -113,33 +113,9 @@ public static class App
 
         SubCommand["msbuild"].SetAction(async parseResult =>
         {
-            if (!Paths.Tools.HasMSBuild)
-            {
-                Console.WriteLine("MSBuild.exe not found");
-                return 1;
-            }
-
             var args = parseResult.GetValue(MSBuildArguments) ?? Array.Empty<string>();
 
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = Paths.Tools.MSBuild,
-                Arguments = string.Join(" ", args),
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            };
-
-            using var process = new Process { StartInfo = startInfo };
-            process.OutputDataReceived += (s, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
-            process.ErrorDataReceived += (s, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
-
-            process.Start();
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-            await process.WaitForExitAsync();
-
-            return process.ExitCode;
+            return await MSBuild.Run(args);
         });
 
         SubCommand["new"].SetAction(async parseResult =>
