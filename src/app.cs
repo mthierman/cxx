@@ -32,11 +32,56 @@ public static class App
         string Vswhere,
         string MSBuild,
         string Vcpkg,
+        string ClangFormat,
         string Src,
         string Build,
         string SolutionFile,
         string ProjectFile
     );
+
+    private static EnvironmentPaths InitializeEnvironmentPaths()
+    {
+        // Find manifest & root
+        var root = FindRepoRoot() ?? throw new FileNotFoundException($"{ManifestFile} not found in any parent directory");
+        var manifest = Path.Combine(root, ManifestFile);
+
+        // Find vswhere
+        var vswhere = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+            @"Microsoft Visual Studio\Installer\vswhere.exe");
+
+        if (!File.Exists(vswhere))
+            throw new FileNotFoundException("vswhere.exe not found");
+
+        // Find MSBuild
+        var msbuild = FindMSBuild(vswhere) ?? string.Empty;
+
+        // Find clang-format
+        var clangFormat = FindClangFormat() ?? string.Empty;
+
+        // Find vcpkg
+        var vcpkgRoot = Environment.GetEnvironmentVariable("VCPKG_ROOT");
+
+        var vcpkg = string.Empty;
+
+        if (vcpkgRoot != null)
+        {
+            var vcpkgExe = Path.Combine(vcpkgRoot, "vcpkg.exe");
+
+            if (File.Exists(vcpkgExe))
+                vcpkg = Path.Combine(vcpkgRoot, "vcpkg.exe");
+        }
+
+        // Set src/build paths
+        var src = Path.Combine(root, "src");
+        var build = Path.Combine(root, "build");
+
+        // Set VS paths
+        var solutionFile = Path.Combine(root, "build", "app.slnx");
+        var projectFile = Path.Combine(root, "build", "app.vcxproj");
+
+        return new EnvironmentPaths(root, manifest, vswhere, msbuild, vcpkg, clangFormat, src, build, solutionFile, projectFile);
+    }
 
     static App()
     {
@@ -164,48 +209,6 @@ auto wmain() -> int {
         return 0;
     }
 
-    private static EnvironmentPaths InitializeEnvironmentPaths()
-    {
-        // Find manifest & root
-        var root = FindRepoRoot() ?? throw new FileNotFoundException($"{ManifestFile} not found in any parent directory");
-        var manifest = Path.Combine(root, ManifestFile);
-
-        // Find vswhere
-        var vswhere = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-            @"Microsoft Visual Studio\Installer\vswhere.exe");
-
-        if (!File.Exists(vswhere))
-            throw new FileNotFoundException($"vswhere.exe not found");
-
-        // Find MSBuild
-        var msbuild = FindMSBuild(vswhere) ?? throw new FileNotFoundException($"MSBuild.exe not found");
-
-        // Find vcpkg
-        var vcpkgRoot = Environment.GetEnvironmentVariable("VCPKG_ROOT");
-
-        if (string.IsNullOrWhiteSpace(vcpkgRoot))
-            throw new Exception("VCPKG_ROOT is not set");
-
-        if (!Directory.Exists(vcpkgRoot))
-            throw new Exception($"VCPKG_ROOT not found: {vcpkgRoot}");
-
-        var vcpkg = Path.Combine(vcpkgRoot, "vcpkg.exe");
-
-        if (!File.Exists(vcpkg))
-            throw new FileNotFoundException($"vcpkg.exe not found in VCPKG_ROOT: {vcpkg}");
-
-        // Set src/build paths
-        var src = Path.Combine(root, "src");
-        var build = Path.Combine(root, "build");
-
-        // Set VS paths
-        var solutionFile = Path.Combine(root, "build", "app.slnx");
-        var projectFile = Path.Combine(root, "build", "app.vcxproj");
-
-        return new EnvironmentPaths(root, manifest, vswhere, msbuild, vcpkg, src, build, solutionFile, projectFile);
-    }
-
     private static string? FindRepoRoot()
     {
         for (var cwd = Environment.CurrentDirectory;
@@ -239,5 +242,24 @@ auto wmain() -> int {
             .FirstOrDefault();
 
         return string.IsNullOrWhiteSpace(found) ? null : found;
+    }
+
+    public static string? FindClangFormat()
+    {
+        var pathEnv = Environment.GetEnvironmentVariable("PATH");
+
+        if (string.IsNullOrEmpty(pathEnv))
+            return null;
+
+        string[] paths = pathEnv.Split(Path.PathSeparator);
+
+        foreach (var dir in paths)
+        {
+            string fullPath = Path.Combine(dir, "clang-format.exe");
+            if (File.Exists(fullPath))
+                return fullPath;
+        }
+
+        return null;
     }
 }
