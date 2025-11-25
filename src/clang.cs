@@ -4,7 +4,7 @@ using static App;
 
 public class Clang
 {
-    private static SemaphoreSlim semaphore = new SemaphoreSlim(Environment.ProcessorCount);
+    private static readonly SemaphoreSlim semaphore = new SemaphoreSlim(Environment.ProcessorCount);
 
     public static async Task FormatAsync()
     {
