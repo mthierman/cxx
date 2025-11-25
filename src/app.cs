@@ -117,7 +117,7 @@ public static class App
         {
             var args = parseResult.GetValue(MSBuildArguments) ?? Array.Empty<string>();
 
-            return await MSBuild.Run(args);
+            return await RunProcess(Paths.Tools.MSBuild, args);
         });
 
         SubCommand["new"].SetAction(async parseResult =>
@@ -172,19 +172,11 @@ public static class App
         return RootCommand.Parse(args).Invoke();
     }
 
-    public static async Task<int> RunProcess(string command, string[] args)
+    public static async Task<int> RunProcess(string? command, string[] args)
     {
-        var verifiedCommand = FindOnPath(command);
-
-        if (verifiedCommand == null)
-        {
-            Console.WriteLine("MSBuild.exe not found");
-            return 1;
-        }
-
         var startInfo = new ProcessStartInfo
         {
-            FileName = verifiedCommand,
+            FileName = command,
             Arguments = string.Join(" ", args),
             RedirectStandardOutput = true,
             RedirectStandardError = true,
