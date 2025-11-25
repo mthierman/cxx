@@ -69,6 +69,7 @@ public class Clang
                     await FormatFileAsync(file, token);
 
                     await console_lock.WaitAsync(token);
+
                     try
                     {
                         Console.ForegroundColor = ConsoleColor.Green;
@@ -83,6 +84,7 @@ public class Clang
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
                     await console_lock.WaitAsync(token);
+
                     try
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
