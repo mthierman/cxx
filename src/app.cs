@@ -8,24 +8,8 @@ public static class App
               .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
               .InformationalVersion ?? "0.0.0";
     public static string ManifestFile = "cxx.jsonc";
-
-    private static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {Version}");
-    private static Argument<MSBuild.BuildConfiguration> BuildConfiguration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
-    private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
-    {
-        ["new"] = new Command("new", "New project"),
-        ["install"] = new Command("install", "Install project dependencies"),
-        ["generate"] = new Command("generate", "Generate project build"),
-        ["build"] = new Command("build", "Build project") { BuildConfiguration },
-        ["run"] = new Command("run", "Run project") { BuildConfiguration },
-        ["publish"] = new Command("publish", "Publish project"),
-        ["clean"] = new Command("clean", "Clean project"),
-        ["format"] = new Command("format", "Format project sources"),
-    };
-
     private static readonly Lazy<EnvironmentPaths> _environmentPaths = new Lazy<EnvironmentPaths>(InitializeEnvironmentPaths);
     public static EnvironmentPaths Paths => _environmentPaths.Value;
-
     public sealed record EnvironmentPaths(
         string Root,
         string Manifest,
@@ -82,6 +66,20 @@ public static class App
 
         return new EnvironmentPaths(root, manifest, vswhere, msbuild, vcpkg, clangFormat, src, build, solutionFile, projectFile);
     }
+
+    private static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {Version}");
+    private static Argument<MSBuild.BuildConfiguration> BuildConfiguration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
+    private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
+    {
+        ["new"] = new Command("new", "New project"),
+        ["install"] = new Command("install", "Install project dependencies"),
+        ["generate"] = new Command("generate", "Generate project build"),
+        ["build"] = new Command("build", "Build project") { BuildConfiguration },
+        ["run"] = new Command("run", "Run project") { BuildConfiguration },
+        ["publish"] = new Command("publish", "Publish project"),
+        ["clean"] = new Command("clean", "Clean project"),
+        ["format"] = new Command("format", "Format project sources"),
+    };
 
     static App()
     {
