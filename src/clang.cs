@@ -42,7 +42,6 @@ public class Clang
         }
     }
 
-
     public static async Task FormatAsync(CancellationToken ct = default)
     {
         var extensions = new[] { ".c", ".cpp", ".cxx", ".h", ".hpp", ".hxx", ".ixx" };
