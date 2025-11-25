@@ -4,6 +4,11 @@ using System.Reflection;
 
 public static class App
 {
+    public static string Version { get; } = Assembly.GetExecutingAssembly()
+              .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+              .InformationalVersion ?? "0.0.0";
+    public static string ManifestFile = "cxx.jsonc";
+
     private static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {Version}");
     private static Argument<MSBuild.BuildConfiguration> BuildConfiguration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
@@ -18,10 +23,6 @@ public static class App
         ["format"] = new Command("format", "Format project sources"),
     };
 
-    public static string Version { get; } = Assembly.GetExecutingAssembly()
-              .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-              .InformationalVersion ?? "0.0.0";
-    public static string ManifestFile = "cxx.jsonc";
     private static readonly Lazy<EnvironmentPaths> _environmentPaths = new Lazy<EnvironmentPaths>(InitializeEnvironmentPaths);
     public static EnvironmentPaths Paths => _environmentPaths.Value;
 
