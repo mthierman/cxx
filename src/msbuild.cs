@@ -252,7 +252,15 @@ public class MSBuild
         if (!Directory.Exists(Paths.Core.Build))
             return 1;
 
-        Directory.Delete(Paths.Core.Build, true);
+        string[] configurations = { "debug", "release" };
+
+        foreach (string configuration in configurations)
+        {
+            var buildDir = Path.Combine(Paths.Core.Build, configuration);
+
+            if (Directory.Exists(buildDir))
+                Directory.Delete(buildDir, true);
+        }
 
         return 0;
     }
