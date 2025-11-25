@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.Diagnostics;
 using System.Reflection;
 
-public class App
+public static partial class App
 {
     public enum ExitCode : int
     {
