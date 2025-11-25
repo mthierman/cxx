@@ -18,12 +18,12 @@ public class App
     private static Argument<MSBuild.BuildConfiguration> build_configuration = new("build_configuration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
     private static Dictionary<string, Command> sub_command = new Dictionary<string, Command>
     {
-        ["new"] = new Command("new", "Scaffold project"),
+        ["new"] = new Command("new", "New project"),
         ["install"] = new Command("install", "Install dependencies"),
         ["generate"] = new Command("generate", "Generate build"),
         ["build"] = new Command("build", "Build") { build_configuration },
         ["clean"] = new Command("clean", "Clean build"),
-        ["run"] = new Command("run", "Run build"),
+        ["run"] = new Command("run", "Build & run") { build_configuration },
         ["format"] = new Command("format", "Format sources"),
     };
 
@@ -101,9 +101,9 @@ auto wmain() -> int {
 
         sub_command["run"].SetAction(async parseResult =>
         {
-            await MSBuild.Build(MSBuild.BuildConfiguration.Debug);
+            await MSBuild.Build(parseResult.GetValue(build_configuration));
 
-            Process.Start(new ProcessStartInfo(Path.Combine(Paths.build, "debug", "app.exe")))?.WaitForExit();
+            Process.Start(new ProcessStartInfo(Path.Combine(Paths.build, parseResult.GetValue(build_configuration) == MSBuild.BuildConfiguration.Debug ? "debug" : "release", "app.exe")))?.WaitForExit();
 
             return 0;
         });
