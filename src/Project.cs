@@ -76,11 +76,10 @@ public static class Project
         }
 
         var cwd = Environment.CurrentDirectory;
-        var blankManifest = Path.Combine(cwd, "cxx.jsonc");
         var vcpkgManifest = Path.Combine(cwd, "vcpkg.json");
         var vcpkgConfig = Path.Combine(cwd, "vcpkg-configuration.json");
 
-        if (File.Exists(Project.ManifestFile) || File.Exists(vcpkgManifest) || File.Exists(vcpkgConfig))
+        if (File.Exists(Core.Manifest) || File.Exists(vcpkgManifest) || File.Exists(vcpkgConfig))
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine("Project already has a manifest file");
@@ -89,14 +88,14 @@ public static class Project
             return 1;
         }
 
-        await File.WriteAllTextAsync(blankManifest, "{}");
+        await File.WriteAllTextAsync(Path.Combine(cwd, ManifestFile), "{}");
 
         ExternalCommand.RunVcpkg("new", "--application");
 
-        if (!Directory.Exists(Project.Core.Src))
-            Directory.CreateDirectory(Project.Core.Src);
+        if (!Directory.Exists(Core.Src))
+            Directory.CreateDirectory(Core.Src);
 
-        var app_cpp = Path.Combine(Project.Core.Src, "app.cpp");
+        var app_cpp = Path.Combine(Core.Src, "app.cpp");
 
         if (!File.Exists(app_cpp))
         {
