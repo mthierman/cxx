@@ -29,7 +29,7 @@ public static class Project
 
         await File.WriteAllTextAsync(blankManifest, "{}");
 
-        App.RunVcpkg("new", "--application");
+        ExternalCommand.RunVcpkg("new", "--application");
 
         if (!Directory.Exists(Paths.Core.Src))
             Directory.CreateDirectory(Paths.Core.Src);

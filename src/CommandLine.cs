@@ -34,14 +34,14 @@ public static class CommandLine
         {
             var args = parseResult.GetValue(MSBuildArguments) ?? Array.Empty<string>();
 
-            return await App.RunProcess(Paths.Tools.MSBuild, args);
+            return await ExternalCommand.Run(Paths.Tools.MSBuild, args);
         });
 
         SubCommand["vcpkg"].SetAction(async parseResult =>
         {
             var args = parseResult.GetValue(VcpkgArguments) ?? Array.Empty<string>();
 
-            return await App.RunProcess(Paths.Tools.Vcpkg, args);
+            return await ExternalCommand.Run(Paths.Tools.Vcpkg, args);
         });
 
         SubCommand["new"].SetAction(async parseResult =>
@@ -51,7 +51,7 @@ public static class CommandLine
 
         SubCommand["install"].SetAction(async parseResult =>
         {
-            return App.RunVcpkg("install");
+            return ExternalCommand.RunVcpkg("install");
         });
 
         SubCommand["generate"].SetAction(async parseResult =>

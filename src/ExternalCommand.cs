@@ -2,9 +2,9 @@ using System.Diagnostics;
 
 namespace cxx;
 
-public static partial class App
+public static class ExternalCommand
 {
-    public static async Task<int> RunProcess(string? command, string[] args)
+    public static async Task<int> Run(string? command, string[] args)
     {
         var startInfo = new ProcessStartInfo
         {
