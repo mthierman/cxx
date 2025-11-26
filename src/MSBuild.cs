@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.SolutionPersistence.Serializer;
 
 namespace cxx;
 
-public class MSBuild
+public static class MSBuild
 {
     public enum BuildConfiguration
     {
