@@ -21,17 +21,13 @@ public static class MSBuild
         if (DevEnv == null)
             await RefreshDevEnv();
 
-        var json = File.ReadAllText(Project.SystemFolders.DevEnvJson);
-        var envFromJson = JsonSerializer.Deserialize<Dictionary<string, string>>(json)
-                 ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON.");
-
         var startInfo = new ProcessStartInfo(fileName)
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
 
-        foreach (var kv in envFromJson)
+        foreach (var kv in DevEnv!)
             startInfo.Environment[kv.Key] = kv.Value;
 
         return startInfo;
@@ -68,8 +64,16 @@ public static class MSBuild
         Directory.CreateDirectory(Path.GetDirectoryName(Project.SystemFolders.AppLocal)!);
         await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, stdout);
 
-        DevEnv = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
+        var env = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
                   ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
+
+        DevEnv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var kv in env)
+        {
+            var key = kv.Key.Equals("Path", StringComparison.OrdinalIgnoreCase) ? "PATH" : kv.Key;
+            DevEnv[key] = kv.Value;
+        }
 
         return 0;
     }
