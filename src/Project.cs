@@ -60,7 +60,7 @@ public static class Project
                         @"Microsoft Visual Studio\Installer\vswhere.exe"),
             MSBuild: Find.MSBuild(vswhere),
             Vcpkg: Find.Vcpkg(),
-            ClangFormat: Find.OnPath("clang-format.exe")
+            ClangFormat: Find.ClangFormat()
         );
     }
 
@@ -192,6 +192,16 @@ auto wmain() -> int {
                 throw new FileNotFoundException($"vcpkg.exe not found");
 
             return vcpkg;
+        }
+
+        public static string ClangFormat()
+        {
+            var clangFormat = OnPath("clang-format.exe");
+
+            if (!File.Exists(clangFormat))
+                throw new FileNotFoundException($"clang-format.exe not found");
+
+            return clangFormat;
         }
     }
 
