@@ -44,18 +44,4 @@ public static class ExternalCommand
 
         return 0;
     }
-
-    public static ProcessStartInfo DevEnvProcessStartInfo(string fileName, Dictionary<string, string> devEnv)
-    {
-        var psi = new ProcessStartInfo(fileName)
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-
-        foreach (var kv in devEnv)
-            psi.Environment[kv.Key] = kv.Value;
-
-        return psi;
-    }
 }

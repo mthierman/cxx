@@ -14,6 +14,25 @@ public static class MSBuild
         Release
     }
 
+    public static Dictionary<string, string>? DevEnv;
+
+    public static ProcessStartInfo DevEnvProcessStartInfo(string fileName)
+    {
+        if (DevEnv == null)
+            throw new InvalidOperationException("Developer environment has not been loaded");
+
+        var startInfo = new ProcessStartInfo(fileName)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        foreach (var kv in DevEnv)
+            startInfo.Environment[kv.Key] = kv.Value;
+
+        return startInfo;
+    }
+
     public static async Task<int> RefreshDevEnv()
     {
         var devShell = Find.DeveloperShell(Project.Tools.VSWhere);
@@ -45,8 +64,8 @@ public static class MSBuild
         Directory.CreateDirectory(Path.GetDirectoryName(Project.SystemFolders.AppLocal)!);
         await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, stdout);
 
-        // var env = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
-        //           ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
+        var env = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
+                  ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
 
         // var devShellProcessStartInfo = ExternalCommand.CreateProcessWithDevShellEnv("msbuild", env);
         // using var devShellProcess = Process.Start(devShellProcessStartInfo)!;
