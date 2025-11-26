@@ -64,17 +64,10 @@ public static class MSBuild
         Directory.CreateDirectory(Path.GetDirectoryName(Project.SystemFolders.AppLocal)!);
         await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, stdout);
 
-        var env = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
+        DevEnv = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
                   ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
 
-        // var devShellProcessStartInfo = ExternalCommand.CreateProcessWithDevShellEnv("msbuild", env);
-        // using var devShellProcess = Process.Start(devShellProcessStartInfo)!;
-        // Console.WriteLine(await devShellProcess.StandardOutput.ReadToEndAsync());
-        // Console.Error.WriteLine(await devShellProcess.StandardError.ReadToEndAsync());
-        // await process.WaitForExitAsync();
-
         return 0;
-
     }
 
     // public static async ProcessStartInfo DeveloperShellStartInfo()

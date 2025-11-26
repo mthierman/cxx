@@ -35,7 +35,14 @@ public static class CommandLine
 
         SubCommand["devenv"].SetAction(async parseResult =>
         {
-            return await MSBuild.RefreshDevEnv();
+            // return await MSBuild.RefreshDevEnv();
+            await MSBuild.RefreshDevEnv();
+
+            var startInfo = MSBuild.DevEnvProcessStartInfo("msbuild");
+            using var devShellProcess = Process.Start(startInfo)!;
+            Console.WriteLine(await devShellProcess.StandardOutput.ReadToEndAsync());
+
+            return 0;
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
