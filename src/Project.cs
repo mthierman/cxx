@@ -4,8 +4,8 @@ public static class Project
 {
     public static string ManifestFile = "cxx.jsonc";
 
-    private static readonly Lazy<CorePaths> _corePaths = new Lazy<CorePaths>(InitCorePaths());
-    private static readonly Lazy<ToolsPaths> _toolPaths = new Lazy<ToolsPaths>(InitToolsPaths());
+    private static readonly Lazy<CorePaths> _corePaths = new Lazy<CorePaths>(InitCorePaths);
+    private static readonly Lazy<ToolsPaths> _toolPaths = new Lazy<ToolsPaths>(InitToolsPaths);
     public static CorePaths Core => _corePaths.Value;
     public static ToolsPaths Tools => _toolPaths.Value;
     public sealed record CorePaths(
