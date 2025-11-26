@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace cxx;
 
@@ -50,24 +51,24 @@ public static class CommandLine
 
             using var process = Process.Start(startInfo)!;
 
-            var outputTask = process.StandardOutput.ReadToEndAsync();
-            var errorTask = process.StandardError.ReadToEndAsync();
+            var stdoutTask = process.StandardOutput.ReadToEndAsync();
+            var stderrTask = process.StandardError.ReadToEndAsync();
 
             await process.WaitForExitAsync();
 
-            var output = await outputTask;
-            var error = await errorTask;
+            var stdout = await stdoutTask;
+            var stderr = await stderrTask;
 
-            if (!string.IsNullOrWhiteSpace(error))
-                Console.Error.WriteLine(error);
+            if (!string.IsNullOrWhiteSpace(stderr))
+                Console.Error.WriteLine(stderr);
 
-            Directory.CreateDirectory(Project.SystemFolders.AppLocal);
+            Directory.CreateDirectory(Path.GetDirectoryName(Project.SystemFolders.AppLocal)!);
+            await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, stdout);
 
-            await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, output);
-            Console.WriteLine($"Developer PowerShell environment saved to: {Project.SystemFolders.DevEnvJson}");
+            var env = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
+                      ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
 
-            // var json = await File.ReadAllTextAsync(envJsonFile);
-            // var devEnv = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+            
 
             return 0;
         });

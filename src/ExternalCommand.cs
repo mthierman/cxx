@@ -44,4 +44,19 @@ public static class ExternalCommand
 
         return 0;
     }
+
+    public static ProcessStartInfo CreateProcessWithDevShellEnv(string exe, string args, Dictionary<string, string> devEnv)
+    {
+        var psi = new ProcessStartInfo(exe)
+        {
+            Arguments = args,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        foreach (var kv in devEnv)
+            psi.Environment[kv.Key] = kv.Value;
+
+        return psi;
+    }
 }
