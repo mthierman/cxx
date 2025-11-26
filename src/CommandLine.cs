@@ -14,6 +14,7 @@ public static class CommandLine
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
         ["devenv"] = new Command("devenv", "Refresh developer environment"),
+        ["devenv_print"] = new Command("devenv_print", "Print developer environment"),
         ["msbuild"] = new Command("msbuild", "MSBuild command") { MSBuildArguments },
         ["vcpkg"] = new Command("vcpkg", "vcpkg command") { VcpkgArguments },
         ["new"] = new Command("new", "New project"),
@@ -35,14 +36,17 @@ public static class CommandLine
 
         SubCommand["devenv"].SetAction(async parseResult =>
         {
-            // return await MSBuild.RefreshDevEnv();
+            return await MSBuild.RefreshDevEnv();
+        });
+
+        SubCommand["devenv_print"].SetAction(async parseResult =>
+        {
             await MSBuild.RefreshDevEnv();
 
-            var startInfo = MSBuild.DevEnvProcessStartInfo("msbuild");
-            using var devShellProcess = Process.Start(startInfo)!;
-            Console.WriteLine(await devShellProcess.StandardOutput.ReadToEndAsync());
-
-            return 0;
+            foreach (var kv in MSBuild.DevEnv!)
+            {
+                Console.WriteLine($"{kv.Key} = {kv.Value}");
+            }
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
