@@ -40,7 +40,7 @@ public static partial class App
 
     private static EnvironmentPaths InitializeEnvironmentPaths()
     {
-        var root = FindRepoRoot() ?? throw new FileNotFoundException($"{ManifestFile} not found in any parent directory");
+        var root = Find.RepoRoot() ?? throw new FileNotFoundException($"{ManifestFile} not found in any parent directory");
         var manifest = Path.Combine(root, ManifestFile);
         var src = Path.Combine(root, "src");
         var build = Path.Combine(root, "build");
@@ -61,9 +61,9 @@ public static partial class App
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
             @"Microsoft Visual Studio\Installer\vswhere.exe");
 
-        var msbuild = FindMSBuild(vswhere);
+        var msbuild = Find.MSBuild(vswhere);
 
-        var clangFormat = FindOnPath("clang-format.exe");
+        var clangFormat = Find.OnPath("clang-format.exe");
 
         string? vcpkg = null;
         var vcpkgRoot = Environment.GetEnvironmentVariable("VCPKG_ROOT");
@@ -73,7 +73,7 @@ public static partial class App
             if (File.Exists(vcpkgExe))
                 vcpkg = vcpkgExe;
             else
-                vcpkg = FindOnPath("vcpkg.exe");
+                vcpkg = Find.OnPath("vcpkg.exe");
         }
 
         var toolsPaths = new ToolsPaths
@@ -87,58 +87,60 @@ public static partial class App
         return new EnvironmentPaths(corePaths, toolsPaths);
     }
 
-
-    private static string? FindOnPath(string command)
+    public static class Find
     {
-        var pathEnv = Environment.GetEnvironmentVariable("PATH");
-
-        if (string.IsNullOrEmpty(pathEnv))
-            return null;
-
-        string[] paths = pathEnv.Split(Path.PathSeparator);
-
-        foreach (var dir in paths)
+        public static string? OnPath(string command)
         {
-            string fullPath = Path.Combine(dir, command);
-            if (File.Exists(fullPath))
-                return fullPath;
+            var pathEnv = Environment.GetEnvironmentVariable("PATH");
+
+            if (string.IsNullOrEmpty(pathEnv))
+                return null;
+
+            string[] paths = pathEnv.Split(Path.PathSeparator);
+
+            foreach (var dir in paths)
+            {
+                string fullPath = Path.Combine(dir, command);
+                if (File.Exists(fullPath))
+                    return fullPath;
+            }
+
+            return null;
         }
 
-        return null;
-    }
-
-    private static string? FindRepoRoot()
-    {
-        for (var cwd = Environment.CurrentDirectory;
-            !string.IsNullOrEmpty(cwd);
-            cwd = Directory.GetParent(cwd)?.FullName)
+        public static string? RepoRoot()
         {
-            if (File.Exists(Path.Combine(cwd, ManifestFile)))
-                return cwd;
+            for (var cwd = Environment.CurrentDirectory;
+                !string.IsNullOrEmpty(cwd);
+                cwd = Directory.GetParent(cwd)?.FullName)
+            {
+                if (File.Exists(Path.Combine(cwd, ManifestFile)))
+                    return cwd;
+            }
+
+            return null;
         }
 
-        return null;
-    }
-
-    private static string? FindMSBuild(string vswhere)
-    {
-        using var process = Process.Start(new ProcessStartInfo(vswhere,
-            "-latest -requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\amd64\\MSBuild.exe")
+        public static string? MSBuild(string vswhere)
         {
-            RedirectStandardOutput = true
-        });
+            using var process = Process.Start(new ProcessStartInfo(vswhere,
+                "-latest -requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\amd64\\MSBuild.exe")
+            {
+                RedirectStandardOutput = true
+            });
 
-        if (process is null)
-            return null;
+            if (process is null)
+                return null;
 
-        var output = process.StandardOutput.ReadToEnd();
-        process.WaitForExit();
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
 
-        var found = output
-            .Split('\r', '\n', StringSplitOptions.RemoveEmptyEntries)
-            .Select(s => s.Trim())
-            .FirstOrDefault();
+            var found = output
+                .Split('\r', '\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .FirstOrDefault();
 
-        return string.IsNullOrWhiteSpace(found) ? null : found;
+            return string.IsNullOrWhiteSpace(found) ? null : found;
+        }
     }
 }
