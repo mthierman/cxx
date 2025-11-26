@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Text.Json;
 using Microsoft.Build.Construction;
 using Microsoft.VisualStudio.SolutionPersistence.Model;
@@ -43,10 +45,19 @@ public static class MSBuild
             RedirectStandardError = true,
             UseShellExecute = false
         };
-        startInfo.ArgumentList.Add("-nol");
-        startInfo.ArgumentList.Add("-nop");
-        startInfo.ArgumentList.Add("-c");
-        startInfo.ArgumentList.Add($"& '{devShell}' | Out-Null; [System.Environment]::GetEnvironmentVariables() | ConvertTo-Json");
+
+        // Run dev shell and then dump all environment variables as KEY=VALUE
+        startInfo.ArgumentList.Add("-NoLogo");
+        startInfo.ArgumentList.Add("-NoProfile");
+        startInfo.ArgumentList.Add("-ExecutionPolicy");
+        startInfo.ArgumentList.Add("Bypass");
+        startInfo.ArgumentList.Add("-Command");
+
+        // Use Get-ChildItem Env: to get the actual environment set by the dev shell
+        startInfo.ArgumentList.Add($@"
+        & '{devShell}' | Out-Null;
+        Get-ChildItem Env: | ForEach-Object {{ ""$($_.Name)=$($_.Value)"" }}
+    ");
 
         using var process = Process.Start(startInfo)!;
 
@@ -61,19 +72,30 @@ public static class MSBuild
         if (!string.IsNullOrWhiteSpace(stderr))
             Console.Error.WriteLine(stderr);
 
-        Directory.CreateDirectory(Path.GetDirectoryName(Project.SystemFolders.AppLocal)!);
-        await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, stdout);
+        // Parse KEY=VALUE lines
+        var envDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        var env = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
-                  ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
-
-        DevEnv = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var kv in env)
+        foreach (var line in stdout.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
         {
-            var key = kv.Key.Equals("Path", StringComparison.OrdinalIgnoreCase) ? "PATH" : kv.Key;
-            DevEnv[key] = kv.Value;
+            var parts = line.Split('=', 2);
+            if (parts.Length == 2)
+            {
+                envDict[parts[0]] = parts[1];
+            }
         }
+
+        DevEnv = envDict;
+
+        // Serialize to JSON robustly
+        Directory.CreateDirectory(Path.GetDirectoryName(Project.SystemFolders.AppLocal)!);
+        var jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
+        string json = JsonSerializer.Serialize(envDict, jsonOptions);
+        await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, json);
 
         return 0;
     }
