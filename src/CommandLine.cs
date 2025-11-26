@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Diagnostics;
-using System.Text.Json;
 
 namespace cxx;
 
@@ -14,7 +13,7 @@ public static class CommandLine
     private static Argument<string[]> VcpkgArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
-        ["devshell"] = new Command("devshell", "Developer PowerShell"),
+        ["devenv"] = new Command("devenv", "Refresh developer environment"),
         ["msbuild"] = new Command("msbuild", "MSBuild command") { MSBuildArguments },
         ["vcpkg"] = new Command("vcpkg", "vcpkg command") { VcpkgArguments },
         ["new"] = new Command("new", "New project"),
@@ -34,47 +33,9 @@ public static class CommandLine
             RootCommand.Subcommands.Add(command);
         }
 
-        SubCommand["devshell"].SetAction(async parseResult =>
+        SubCommand["devenv"].SetAction(async parseResult =>
         {
-            var devShell = Find.DeveloperShell(Project.Tools.VSWhere);
-
-            var startInfo = new ProcessStartInfo("powershell")
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false
-            };
-            startInfo.ArgumentList.Add("-nol");
-            startInfo.ArgumentList.Add("-nop");
-            startInfo.ArgumentList.Add("-c");
-            startInfo.ArgumentList.Add($"& '{devShell}' | Out-Null; [System.Environment]::GetEnvironmentVariables() | ConvertTo-Json");
-
-            using var process = Process.Start(startInfo)!;
-
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
-
-            await process.WaitForExitAsync();
-
-            var stdout = await stdoutTask;
-            var stderr = await stderrTask;
-
-            if (!string.IsNullOrWhiteSpace(stderr))
-                Console.Error.WriteLine(stderr);
-
-            Directory.CreateDirectory(Path.GetDirectoryName(Project.SystemFolders.AppLocal)!);
-            await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, stdout);
-
-            var env = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
-                      ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
-
-            var devShellProcessStartInfo = ExternalCommand.CreateProcessWithDevShellEnv("msbuild", env);
-            using var devShellProcess = Process.Start(devShellProcessStartInfo)!;
-            Console.WriteLine(await devShellProcess.StandardOutput.ReadToEndAsync());
-            Console.Error.WriteLine(await devShellProcess.StandardError.ReadToEndAsync());
-            await process.WaitForExitAsync();
-
-            return 0;
+            return await MSBuild.RefreshDevEnv();
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>

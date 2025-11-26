@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.Build.Construction;
 using Microsoft.VisualStudio.SolutionPersistence.Model;
 using Microsoft.VisualStudio.SolutionPersistence.Serializer;
@@ -12,6 +13,105 @@ public static class MSBuild
         Debug,
         Release
     }
+
+    public static async Task<int> RefreshDevEnv()
+    {
+        var devShell = Find.DeveloperShell(Project.Tools.VSWhere);
+
+        var startInfo = new ProcessStartInfo("powershell")
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+        startInfo.ArgumentList.Add("-nol");
+        startInfo.ArgumentList.Add("-nop");
+        startInfo.ArgumentList.Add("-c");
+        startInfo.ArgumentList.Add($"& '{devShell}' | Out-Null; [System.Environment]::GetEnvironmentVariables() | ConvertTo-Json");
+
+        using var process = Process.Start(startInfo)!;
+
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
+
+        await process.WaitForExitAsync();
+
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
+
+        if (!string.IsNullOrWhiteSpace(stderr))
+            Console.Error.WriteLine(stderr);
+
+        Directory.CreateDirectory(Path.GetDirectoryName(Project.SystemFolders.AppLocal)!);
+        await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, stdout);
+
+        // var env = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
+        //           ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
+
+        // var devShellProcessStartInfo = ExternalCommand.CreateProcessWithDevShellEnv("msbuild", env);
+        // using var devShellProcess = Process.Start(devShellProcessStartInfo)!;
+        // Console.WriteLine(await devShellProcess.StandardOutput.ReadToEndAsync());
+        // Console.Error.WriteLine(await devShellProcess.StandardError.ReadToEndAsync());
+        // await process.WaitForExitAsync();
+
+        return 0;
+
+    }
+
+    // public static async ProcessStartInfo DeveloperShellStartInfo()
+    // {
+    //     if (!File.Exists(Project.SystemFolders.DevEnvJson))
+    //         await RefreshDevEnv();
+
+    //     var json = File.ReadAllText(Project.SystemFolders.DevEnvJson);
+    //     var devEnv = JsonSerializer.Deserialize<Dictionary<string, string>>(json)
+    //                  ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
+
+    //     var devShellProcessStartInfo = ExternalCommand.CreateProcessWithDevShellEnv("msbuild", devEnv);
+    //     using var devShellProcess = Process.Start(devShellProcessStartInfo)!;
+    //     Console.WriteLine(await devShellProcess.StandardOutput.ReadToEndAsync());
+    //     Console.Error.WriteLine(await devShellProcess.StandardError.ReadToEndAsync());
+    //     await process.WaitForExitAsync();
+    // }
+
+    // public static ProcessStartInfo DeveloperShellStartInfo()
+    // {
+    //     // Load DevShell environment from JSON
+    //     var jsonFile = Project.SystemFolders.DevEnvJson;
+    //     if (!File.Exists(jsonFile))
+    //         throw new FileNotFoundException("Developer PowerShell environment JSON not found", jsonFile);
+
+    //     var json = File.ReadAllText(jsonFile);
+    //     var devEnv = JsonSerializer.Deserialize<Dictionary<string, string>>(json)
+    //                  ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
+
+    //     // Create ProcessStartInfo
+    //     var psi = new ProcessStartInfo(exe)
+    //     {
+    //         Arguments = args,
+    //         UseShellExecute = false,
+    //         RedirectStandardOutput = true,
+    //         RedirectStandardError = true
+    //     };
+
+    //     // Merge environment
+    //     foreach (var kv in devEnv)
+    //         psi.Environment[kv.Key] = kv.Value;
+
+    //     return psi;
+    // }
+
+    // public static ProcessStartInfo DeveloperShellStartInfo()
+    // {
+    //     var env = JsonSerializer.Deserialize<Dictionary<string, string>>(stdout)
+    //               ?? throw new InvalidOperationException("Failed to parse DevShell environment JSON");
+
+    //     var devShellProcessStartInfo = ExternalCommand.CreateProcessWithDevShellEnv("msbuild", env);
+    //     using var devShellProcess = Process.Start(devShellProcessStartInfo)!;
+    //     Console.WriteLine(await devShellProcess.StandardOutput.ReadToEndAsync());
+    //     Console.Error.WriteLine(await devShellProcess.StandardError.ReadToEndAsync());
+    //     await process.WaitForExitAsync();
+    // }
 
     private static async Task<int> GenerateSolution()
     {
