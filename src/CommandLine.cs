@@ -5,12 +5,15 @@ namespace cxx;
 
 public static class CommandLine
 {
+    private static readonly SemaphoreSlim ConsoleLock = new SemaphoreSlim(1, 1);
+
     public static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {App.Version}");
     private static Argument<MSBuild.BuildConfiguration> BuildConfiguration = new("BuildConfiguration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
     private static Argument<string[]> MSBuildArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Argument<string[]> VcpkgArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
+        ["devshell"] = new Command("devshell", "Developer PowerShell"),
         ["msbuild"] = new Command("msbuild", "MSBuild command") { MSBuildArguments },
         ["vcpkg"] = new Command("vcpkg", "vcpkg command") { VcpkgArguments },
         ["new"] = new Command("new", "New project"),
@@ -29,6 +32,46 @@ public static class CommandLine
         {
             RootCommand.Subcommands.Add(command);
         }
+
+        SubCommand["devshell"].SetAction(async parseResult =>
+        {
+            var devShell = Find.DeveloperShell(Project.Tools.VSWhere);
+
+            var startInfo = new ProcessStartInfo("pwsh")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+            startInfo.ArgumentList.Add("-nol");
+            startInfo.ArgumentList.Add("-nop");
+            startInfo.ArgumentList.Add("-c");
+            startInfo.ArgumentList.Add($"& '{devShell}'");
+
+            using var process = Process.Start(startInfo)!;
+
+            _ = Task.Run(async () =>
+                {
+                    string? line;
+                    while ((line = await process.StandardOutput.ReadLineAsync()) != null)
+                    {
+                        lock (ConsoleLock)
+                            Console.WriteLine(line);
+                    }
+                });
+
+            _ = Task.Run(async () =>
+                {
+                    string? line;
+                    while ((line = await process.StandardError.ReadLineAsync()) != null)
+                    {
+                        lock (ConsoleLock)
+                            Console.Error.WriteLine(line);
+                    }
+                });
+
+            await process.WaitForExitAsync();
+        });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
         {
