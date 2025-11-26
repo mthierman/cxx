@@ -10,6 +10,7 @@ public static class Project
         public static readonly string Roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
         public static readonly string AppLocal = Path.Combine(Local, "cxx");
+        public static readonly string DevEnvJson = Path.Combine(AppLocal, "dev_env.json");
         public static readonly string AppRoaming = Path.Combine(Roaming, "cxx");
     }
     private static readonly Lazy<CorePaths> _corePaths = new Lazy<CorePaths>(InitCorePaths);

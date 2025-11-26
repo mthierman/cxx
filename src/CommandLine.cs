@@ -63,10 +63,13 @@ public static class CommandLine
 
             Directory.CreateDirectory(Project.SystemFolders.AppLocal);
 
-            var outFile = Path.Combine(Project.SystemFolders.AppLocal, "vs_env.json");
-            await File.WriteAllTextAsync(outFile, output);
+            await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, output);
+            Console.WriteLine($"Developer PowerShell environment saved to: {Project.SystemFolders.DevEnvJson}");
 
-            Console.WriteLine($"Developer PowerShell environment saved to: {outFile}");
+            // var json = await File.ReadAllTextAsync(envJsonFile);
+            // var devEnv = JsonSerializer.Deserialize<Dictionary<string, string>>(json)!;
+
+            return 0;
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
