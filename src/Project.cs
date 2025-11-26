@@ -8,7 +8,6 @@ public static class Project
 
     private static readonly Lazy<CorePaths> _corePaths =
         new Lazy<CorePaths>(InitializeCorePaths);
-
     private static readonly Lazy<ToolsPaths> _toolPaths =
         new Lazy<ToolsPaths>(InitializeToolsPaths);
 
@@ -46,9 +45,9 @@ public static class Project
     private static CorePaths InitializeCorePaths()
     {
         var ProjectRoot = Find.ProjectRoot()
-            ?? throw new FileNotFoundException($"{ManifestFile} not found in any parent directory");
+            ?? throw new FileNotFoundException($"No {ManifestFile}");
 
-        return new CorePaths(
+        return new(
             ProjectRoot: ProjectRoot,
             Manifest: Path.Combine(ProjectRoot, ManifestFile),
             Src: Path.Combine(ProjectRoot, "src"),
@@ -64,8 +63,8 @@ public static class Project
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
             @"Microsoft Visual Studio\Installer\vswhere.exe");
 
-        return new ToolsPaths(
-            VSWhere: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft Visual Studio\Installer\vswhere.exe"),
+        return new(
+            VSWhere: vswhere,
             MSBuild: Find.MSBuild(vswhere),
             Vcpkg: Find.Vcpkg(),
             ClangFormat: Find.OnPath("clang-format.exe")
@@ -108,9 +107,9 @@ public static class Project
             return null;
         }
 
-        public static string? MSBuild(string vswhere)
+        public static string? MSBuild()
         {
-            using var process = Process.Start(new ProcessStartInfo(vswhere,
+            using var process = Process.Start(new ProcessStartInfo(Tools.VSWhere,
                 "-latest -requires Microsoft.Component.MSBuild -find MSBuild\\**\\Bin\\amd64\\MSBuild.exe")
             {
                 RedirectStandardOutput = true
