@@ -5,18 +5,18 @@ namespace cxx;
 public static partial class App
 {
     public static string ManifestFile = "cxx.jsonc";
-    private static readonly Lazy<EnvironmentPaths> _environmentPaths = new Lazy<EnvironmentPaths>(InitializeEnvironmentPaths);
-    public static EnvironmentPaths Paths => _environmentPaths.Value;
+    private static readonly Lazy<EnvironmentPaths> _paths =
+        new Lazy<EnvironmentPaths>(InitializeEnvironmentPaths);
+    public static EnvironmentPaths Paths => _paths.Value;
     public sealed record EnvironmentPaths(CorePaths Core, ToolsPaths Tools);
-    public sealed record CorePaths
+    public sealed record CorePaths(
+        string Root,
+        string Manifest,
+        string Src,
+        string Build,
+        string SolutionFile,
+        string ProjectFile)
     {
-        public required string Root { get; init; }
-        public required string Manifest { get; init; }
-        public required string Src { get; init; }
-        public required string Build { get; init; }
-        public required string SolutionFile { get; init; }
-        public required string ProjectFile { get; init; }
-
         public bool HasRoot => Directory.Exists(Root);
         public bool HasManifest => File.Exists(Manifest);
         public bool HasSrc => Directory.Exists(Src);
@@ -24,13 +24,13 @@ public static partial class App
         public bool HasSolutionFile => File.Exists(SolutionFile);
         public bool HasProjectFile => File.Exists(ProjectFile);
     }
-    public sealed record ToolsPaths
-    {
-        public string? VSWhere { get; init; }
-        public string? MSBuild { get; init; }
-        public string? Vcpkg { get; init; }
-        public string? ClangFormat { get; init; }
 
+    public sealed record ToolsPaths(
+        string? VSWhere,
+        string? MSBuild,
+        string? Vcpkg,
+        string? ClangFormat)
+    {
         public bool HasVSWhere => !string.IsNullOrEmpty(VSWhere);
         public bool HasMSBuild => !string.IsNullOrEmpty(MSBuild);
         public bool HasVcpkg => !string.IsNullOrEmpty(Vcpkg);
@@ -39,51 +39,30 @@ public static partial class App
 
     private static EnvironmentPaths InitializeEnvironmentPaths()
     {
-        var root = Find.RepoRoot() ?? throw new FileNotFoundException($"{ManifestFile} not found in any parent directory");
-        var manifest = Path.Combine(root, ManifestFile);
-        var src = Path.Combine(root, "src");
-        var build = Path.Combine(root, "build");
-        var solutionFile = Path.Combine(build, "app.slnx");
-        var projectFile = Path.Combine(build, "app.vcxproj");
+        var root = Find.RepoRoot()
+            ?? throw new FileNotFoundException($"{ManifestFile} not found in any parent directory");
 
-        var corePaths = new CorePaths
-        {
-            Root = root,
-            Manifest = manifest,
-            Src = src,
-            Build = build,
-            SolutionFile = solutionFile,
-            ProjectFile = projectFile
-        };
+        var core = new CorePaths(
+            Root: root,
+            Manifest: Path.Combine(root, ManifestFile),
+            Src: Path.Combine(root, "src"),
+            Build: Path.Combine(root, "build"),
+            SolutionFile: Path.Combine(root, "build", "app.slnx"),
+            ProjectFile: Path.Combine(root, "build", "app.vcxproj")
+        );
 
         var vswhere = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
             @"Microsoft Visual Studio\Installer\vswhere.exe");
 
-        var msbuild = Find.MSBuild(vswhere);
+        var tools = new ToolsPaths(
+            VSWhere: Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft Visual Studio\Installer\vswhere.exe"),
+            MSBuild: Find.MSBuild(vswhere),
+            Vcpkg: FindVcpkg(),
+            ClangFormat: Find.OnPath("clang-format.exe")
+        );
 
-        var clangFormat = Find.OnPath("clang-format.exe");
-
-        string? vcpkg = null;
-        var vcpkgRoot = Environment.GetEnvironmentVariable("VCPKG_ROOT");
-        if (!string.IsNullOrEmpty(vcpkgRoot))
-        {
-            var vcpkgExe = Path.Combine(vcpkgRoot, "vcpkg.exe");
-            if (File.Exists(vcpkgExe))
-                vcpkg = vcpkgExe;
-            else
-                vcpkg = Find.OnPath("vcpkg.exe");
-        }
-
-        var toolsPaths = new ToolsPaths
-        {
-            VSWhere = vswhere,
-            MSBuild = msbuild,
-            Vcpkg = vcpkg,
-            ClangFormat = clangFormat
-        };
-
-        return new EnvironmentPaths(corePaths, toolsPaths);
+        return new EnvironmentPaths(core, tools);
     }
 
     public static class Find
@@ -109,12 +88,14 @@ public static partial class App
 
         public static string? RepoRoot()
         {
-            for (var cwd = Environment.CurrentDirectory;
-                !string.IsNullOrEmpty(cwd);
-                cwd = Directory.GetParent(cwd)?.FullName)
+            var cwd = Environment.CurrentDirectory;
+
+            while (!string.IsNullOrEmpty(cwd))
             {
                 if (File.Exists(Path.Combine(cwd, ManifestFile)))
                     return cwd;
+
+                cwd = Directory.GetParent(cwd)?.FullName;
             }
 
             return null;
@@ -140,6 +121,17 @@ public static partial class App
                 .FirstOrDefault();
 
             return string.IsNullOrWhiteSpace(found) ? null : found;
+        }
+
+        public static string? Vcpkg()
+        {
+            var vcpkgRoot = Environment.GetEnvironmentVariable("VCPKG_ROOT");
+
+            if (string.IsNullOrEmpty(vcpkgRoot))
+                return OnPath("vcpkg.exe");
+
+            var exe = Path.Combine(vcpkgRoot, "vcpkg.exe");
+            return File.Exists(exe) ? exe : OnPath("vcpkg.exe");
         }
     }
 }
