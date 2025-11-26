@@ -37,7 +37,7 @@ public static class CommandLine
         {
             var devShell = Find.DeveloperShell(Project.Tools.VSWhere);
 
-            var startInfo = new ProcessStartInfo("pwsh")
+            var startInfo = new ProcessStartInfo("powershell")
             {
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -46,7 +46,7 @@ public static class CommandLine
             startInfo.ArgumentList.Add("-nol");
             startInfo.ArgumentList.Add("-nop");
             startInfo.ArgumentList.Add("-c");
-            startInfo.ArgumentList.Add($"& '{devShell}' | Out-Null && [System.Environment]::GetEnvironmentVariables() | ConvertTo-Json");
+            startInfo.ArgumentList.Add($"& '{devShell}' | Out-Null; [System.Environment]::GetEnvironmentVariables() | ConvertTo-Json");
 
             using var process = Process.Start(startInfo)!;
 
