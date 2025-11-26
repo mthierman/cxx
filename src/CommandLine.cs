@@ -60,7 +60,9 @@ public static class CommandLine
 
             if (!string.IsNullOrWhiteSpace(error))
                 Console.Error.WriteLine(error);
+
             Directory.CreateDirectory(Project.SystemFolders.AppLocal);
+
             var outFile = Path.Combine(Project.SystemFolders.AppLocal, "vs_env.json");
             await File.WriteAllTextAsync(outFile, output);
 
