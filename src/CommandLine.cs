@@ -58,10 +58,19 @@ public static class CommandLine
 
         SubCommand["devenv_msbuild"].SetAction(async parseResult =>
         {
-            var startInfo = await MSBuild.DevEnvProcessStartInfo("msbuild");
+            await MSBuild.RefreshDevEnv();
+
+            var startInfo = new ProcessStartInfo("msbuild")
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            foreach (var kv in MSBuild.DevEnv!)
+                startInfo.Environment[kv.Key] = kv.Value;
 
             using var process = Process.Start(startInfo)
-                       ?? throw new InvalidOperationException("Failed to start MSBuild.");
+                  ?? throw new InvalidOperationException("Failed to start MSBuild.");
 
             var stdoutTask = process.StandardOutput.ReadToEndAsync();
             var stderrTask = process.StandardError.ReadToEndAsync();
