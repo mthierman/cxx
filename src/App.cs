@@ -49,9 +49,7 @@ public static class App
 
         SubCommand["vs"].SetAction(async parseResult =>
         {
-            var installPath = VisualStudio.InstallPath;
-
-            Console.WriteLine(installPath);
+            Console.WriteLine(VisualStudio.InstallPath);
         });
 
         SubCommand["devenv"].SetAction(async parseResult =>
