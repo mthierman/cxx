@@ -22,50 +22,58 @@ public static class MSBuild
         private static readonly string CacheFile = Path.Combine(Project.SystemFolders.AppLocal, "DevToolsCache.json");
         private static readonly string[] ToolNames = { "MSBuild.exe", "lib.exe", "link.exe", "rc.exe" };
 
-        private static readonly Lazy<Task<ConcurrentDictionary<string, string>>> _tools = new(async () =>
+        // Lazy cache: either load synchronously from JSON or compute async if needed
+        private static readonly Lazy<Task<ConcurrentDictionary<string, string>>> _tools = new(() =>
         {
-            // Try load from JSON cache
+            // If JSON exists, load synchronously for instant access
             if (File.Exists(CacheFile))
             {
                 try
                 {
-                    var json = await File.ReadAllTextAsync(CacheFile);
+                    var json = File.ReadAllText(CacheFile);
                     var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
                     if (dict != null)
-                        return new ConcurrentDictionary<string, string>(dict, StringComparer.OrdinalIgnoreCase);
+                        return Task.FromResult(new ConcurrentDictionary<string, string>(dict, StringComparer.OrdinalIgnoreCase));
                 }
                 catch
                 {
-                    // Ignore errors and recompute
+                    // Ignore errors and fall back to async computation
                 }
             }
 
-            // Compute all tool paths in parallel
-            var dictCompute = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            // Otherwise compute asynchronously
+            return ComputeToolsAsync();
+        });
+
+        private static async Task<ConcurrentDictionary<string, string>> ComputeToolsAsync()
+        {
+            var dict = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
             await Parallel.ForEachAsync(ToolNames, async (tool, _) =>
             {
                 var path = await GetCommandFromDevEnv(tool);
-                dictCompute[tool] = path;
+                dict[tool] = path;
             });
 
-            // Save to JSON for next runs
+            // Save JSON for next runs
             try
             {
-                var jsonSave = JsonSerializer.Serialize(dictCompute, new JsonSerializerOptions { WriteIndented = true });
+                var jsonSave = JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true });
                 await File.WriteAllTextAsync(CacheFile, jsonSave);
             }
             catch
             {
-                // Ignore save errors
+                // ignore save errors
             }
 
-            return dictCompute;
-        });
+            return dict;
+        }
 
         private static Task<ConcurrentDictionary<string, string>> Tools => _tools.Value;
 
         private static async Task<string> GetTool(string name) => (await Tools)[name];
 
+        // Public accessors using ValueTask for minimal overhead
         public static ValueTask<string> MSBuild() => new(GetTool("MSBuild.exe"));
         public static ValueTask<string> Lib() => new(GetTool("lib.exe"));
         public static ValueTask<string> Link() => new(GetTool("link.exe"));

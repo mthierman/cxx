@@ -40,12 +40,12 @@ public static class CommandLine
         {
             var devEnv = await MSBuild.DevEnvironmentProvider.Environment;
 
-            Console.WriteLine(MSBuild.DevEnvironmentTools.MSBuild());
+            Console.WriteLine(await MSBuild.DevEnvironmentTools.MSBuild());
         });
 
         SubCommand["devenv_print"].SetAction(async parseResult =>
         {
-            var devEnv = await MSBuild.GetDevEnv();
+            var devEnv = await MSBuild.DevEnvironmentProvider.Environment;
 
             foreach (var kv in devEnv)
             {
@@ -55,9 +55,7 @@ public static class CommandLine
 
         SubCommand["devenv_msbuild"].SetAction(async parseResult =>
         {
-            var devEnv = await MSBuild.GetDevEnv();
-
-            var msbuild = await MSBuild.GetCommandFromDevEnv("msbuild");
+            var msbuild = await MSBuild.DevEnvironmentTools.MSBuild();
 
             Console.WriteLine(msbuild);
 
