@@ -64,7 +64,7 @@ public static class MSBuild
         var devPrompt = Find.DeveloperShell(Project.Tools.VSWhere);
 
         string script = $@"
-            & '{devPrompt}' -arch=amd64 -host_arch=amd64 | Out-Null
+            & '{devPrompt}' -Arch amd64 -HostArch amd64 -SkipAutomaticLocation | Out-Null
             [System.Environment]::GetEnvironmentVariables()
         ";
 
