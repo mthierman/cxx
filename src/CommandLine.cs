@@ -1,7 +1,5 @@
 using System.CommandLine;
 using System.Diagnostics;
-// using System.Text.Json;
-using System.Management.Automation;
 
 namespace cxx;
 
