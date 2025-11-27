@@ -167,13 +167,13 @@ public static class MSBuild
     {
         var devEnv = await DevEnv;
 
-        if (!devEnv.TryGetValue("WindowsSDK_ExecutablePath_x64", out var sdkPath))
-            throw new KeyNotFoundException("WindowsSDK_ExecutablePath_x64 not found in developer environment.");
+        if (!devEnv.TryGetValue("WindowsSdkVerBinPath", out var sdkPath))
+            throw new KeyNotFoundException("WindowsSdkVerBinPath not found in developer environment.");
 
         if (!Directory.Exists(sdkPath))
             throw new DirectoryNotFoundException($"Windows SDK path does not exist: {sdkPath}");
 
-        return sdkPath;
+        return Path.Combine(sdkPath, "x64");
     }
 
     private static async Task SaveEnvToJson(Dictionary<string, string> env)

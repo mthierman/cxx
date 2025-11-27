@@ -38,17 +38,20 @@ public static class CommandLine
 
         SubCommand["devenv"].SetAction(async parseResult =>
         {
-            var devEnv = await MSBuild.DevEnv;
+            // var devEnv = await MSBuild.DevEnv;
 
-            foreach (var kv in devEnv)
-            {
-                Console.WriteLine($"{kv.Key} = {kv.Value}");
-            }
+            // foreach (var kv in devEnv)
+            // {
+            //     Console.WriteLine($"{kv.Key} = {kv.Value}");
+            // }
 
-            Console.WriteLine();
+            // Console.WriteLine();
 
-            await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), "-version");
-            return await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.RC(), "-version");
+            var sdk = await MSBuild.GetWindowsSdkExecutablePath();
+            Console.WriteLine(sdk);
+
+            // await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), "-version");
+            // return await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.RC(), "-version");
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
