@@ -39,45 +39,52 @@ public static class CommandLine
 
         SubCommand["devenv"].SetAction(async parseResult =>
         {
-            var devEnv = await MSBuild.GetDevEnv();
-
-            await MSBuild.SaveEnvToJson(devEnv);
+            var devEnv = await MSBuild.GetDevShell();
 
             foreach (var kv in devEnv)
             {
                 Console.WriteLine($"{kv.Key} = {kv.Value}");
             }
 
-            var startInfo = new ProcessStartInfo("powershell")
-            {
-                Arguments = $"-c msbuild",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
+            // var devEnv = await MSBuild.GetDevEnv();
 
-            MSBuild.ApplyEnvToProcess(startInfo, devEnv);
+            // await MSBuild.SaveEnvToJson(devEnv);
 
-            using var process = Process.Start(startInfo)!;
-            string output = await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync();
+            // foreach (var kv in devEnv)
+            // {
+            //     Console.WriteLine($"{kv.Key} = {kv.Value}");
+            // }
 
-            Console.WriteLine(output);
+            // var startInfo = new ProcessStartInfo("powershell")
+            // {
+            //     Arguments = $"-c msbuild",
+            //     UseShellExecute = false,
+            //     RedirectStandardOutput = true,
+            //     RedirectStandardError = true
+            // };
 
-            using (PowerShell ps = PowerShell.Create())
-            {
-                ps.AddScript("$PSVersionTable.PSVersion.ToString()");
-                var version = ps.Invoke()[0].ToString();
-                Console.WriteLine($"PowerShell version: {version}");
+            // MSBuild.ApplyEnvToProcess(startInfo, devEnv);
 
-                ps.AddScript("Get-Process | Select-Object -First 5");
-                var results = ps.Invoke();
+            // using var process = Process.Start(startInfo)!;
+            // string output = await process.StandardOutput.ReadToEndAsync();
+            // await process.WaitForExitAsync();
 
-                foreach (var result in results)
-                {
-                    Console.WriteLine(result);
-                }
-            }
+            // Console.WriteLine(output);
+
+            // using (PowerShell ps = PowerShell.Create())
+            // {
+            //     ps.AddScript("$PSVersionTable.PSVersion.ToString()");
+            //     var version = ps.Invoke()[0].ToString();
+            //     Console.WriteLine($"PowerShell version: {version}");
+
+            //     ps.AddScript("Get-Process | Select-Object -First 5");
+            //     var results = ps.Invoke();
+
+            //     foreach (var result in results)
+            //     {
+            //         Console.WriteLine(result);
+            //     }
+            // }
         });
 
         // SubCommand["devenv"].SetAction(async parseResult =>

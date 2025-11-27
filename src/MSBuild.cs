@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Management.Automation;
 using System.Text.Json;
 using Microsoft.Build.Construction;
 using Microsoft.VisualStudio.SolutionPersistence.Model;
@@ -53,6 +54,39 @@ public static class MSBuild
             string value = trimmed[(eq + 1)..];
 
             env[key] = value;
+        }
+
+        return env;
+    }
+
+    public static async Task<Dictionary<string, string>> GetDevShell()
+    {
+        var devPrompt = Find.DeveloperShell(Project.Tools.VSWhere);
+
+        string script = $@"
+            & '{devPrompt}' -arch=amd64 -host_arch=amd64 | Out-Null
+            [System.Environment]::GetEnvironmentVariables()
+        ";
+
+        using var ps = PowerShell.Create();
+        ps.AddScript(script);
+
+        var results = await Task.Run(() => ps.Invoke());
+
+        var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var psObj in results)
+        {
+            // fully qualify non-generic IDictionary to avoid confusion
+            if (psObj.BaseObject is System.Collections.IDictionary dict)
+            {
+                foreach (System.Collections.DictionaryEntry entry in dict)
+                {
+                    string key = entry.Key?.ToString() ?? "";
+                    string value = entry.Value?.ToString() ?? "";
+                    env[key] = value;
+                }
+            }
         }
 
         return env;
