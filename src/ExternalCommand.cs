@@ -6,24 +6,23 @@ public static class ExternalCommand
 {
     public static async Task<int> Run(string? command, params string[] args)
     {
+        if (string.IsNullOrEmpty(command))
+            throw new ArgumentException("command required", nameof(command));
+
         var startInfo = new ProcessStartInfo
         {
             FileName = command,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
+            UseShellExecute = false,
+            RedirectStandardOutput = false,
+            RedirectStandardError = false,
+            CreateNoWindow = false
         };
 
-        foreach (var arg in args)
-            startInfo.ArgumentList.Add(arg);
+        foreach (var a in args ?? Array.Empty<string>())
+            startInfo.ArgumentList.Add(a);
 
-        using var process = new Process { StartInfo = startInfo };
-        process.OutputDataReceived += (s, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
-        process.ErrorDataReceived += (s, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
-
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
+        using var process = Process.Start(startInfo)
+                      ?? throw new InvalidOperationException("Failed to start process.");
 
         await process.WaitForExitAsync();
 
