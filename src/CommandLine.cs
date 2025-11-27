@@ -14,9 +14,9 @@ public static class CommandLine
     private static Argument<string[]> VcpkgArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
-        ["devenv"] = new Command("devenv", "Refresh developer environment"),
-        ["devenv_print"] = new Command("devenv_print", "Print developer environment"),
-        ["devenv_msbuild"] = new Command("devenv_msbuild", "Run MSBuild from developer environment"),
+        // ["devenv"] = new Command("devenv", "Refresh developer environment"),
+        // ["devenv_print"] = new Command("devenv_print", "Print developer environment"),
+        // ["devenv_msbuild"] = new Command("devenv_msbuild", "Run MSBuild from developer environment"),
         ["msbuild"] = new Command("msbuild", "MSBuild command") { MSBuildArguments },
         ["vcpkg"] = new Command("vcpkg", "vcpkg command") { VcpkgArguments },
         ["new"] = new Command("new", "New project"),
