@@ -17,7 +17,7 @@ public static class MSBuild
         Release
     }
 
-    public static async Task<int> Run(params string[]? arguments)
+    public static async Task<int> Run(params string[]? args)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -28,15 +28,7 @@ public static class MSBuild
             CreateNoWindow = false
         };
 
-        foreach (var argument in arguments ?? Array.Empty<string>())
-            startInfo.ArgumentList.Add(argument);
-
-        using var process = Process.Start(startInfo)
-                      ?? throw new InvalidOperationException("Failed to start process.");
-
-        await process.WaitForExitAsync();
-
-        return process.ExitCode;
+        return await ExternalCommand.Run(startInfo, args);
     }
 
     public static Task<Dictionary<string, string>> DevEnv => _lazyEnv.Value;

@@ -11,13 +11,13 @@ public static class CommandLine
     public static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {App.Version}");
     private static Argument<MSBuild.BuildConfiguration> BuildConfiguration = new("BuildConfiguration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
     private static Argument<string[]> MSBuildArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
-    private static Argument<string[]> NinjaBuildArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
+    private static Argument<string[]> NinjaArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Argument<string[]> VcpkgArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
         ["devenv"] = new Command("devenv", "Refresh developer environment"),
         ["msbuild"] = new Command("msbuild") { MSBuildArguments },
-        ["ninja"] = new Command("ninja") { NinjaBuildArguments },
+        ["ninja"] = new Command("ninja") { NinjaArguments },
         ["vcpkg"] = new Command("vcpkg") { VcpkgArguments },
         ["new"] = new Command("new", "New project"),
         ["install"] = new Command("install", "Install project dependencies"),
@@ -56,14 +56,12 @@ public static class CommandLine
 
         SubCommand["msbuild"].SetAction(async parseResult =>
         {
-            return await MSBuild.Run(parseResult.GetValue(VcpkgArguments));
+            return await MSBuild.Run(parseResult.GetValue(MSBuildArguments));
         });
 
         SubCommand["ninja"].SetAction(async parseResult =>
         {
-            var args = parseResult.GetValue(NinjaBuildArguments) ?? Array.Empty<string>();
-
-            return await ExternalCommand.Run("ninja.exe", args);
+            return await Ninja.Run(parseResult.GetValue(NinjaArguments));
         });
 
         SubCommand["vcpkg"].SetAction(async parseResult =>

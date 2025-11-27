@@ -2,13 +2,13 @@ using System.Diagnostics;
 
 namespace cxx;
 
-public static class Vcpkg
+public static class Ninja
 {
     public static async Task<int> Run(params string[]? args)
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = Project.Tools.Vcpkg,
+            FileName = "ninja.exe",
             UseShellExecute = false,
             RedirectStandardOutput = false,
             RedirectStandardError = false,
