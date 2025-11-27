@@ -70,6 +70,17 @@ public static class MSBuild
         await JsonSerializer.SerializeAsync(stream, env, options);
     }
 
+    public static void ApplyEnvToProcess(ProcessStartInfo startInfo, Dictionary<string, string> env)
+    {
+        if (startInfo.Environment == null)
+            throw new InvalidOperationException("ProcessStartInfo.Environment is not available. Make sure UseShellExecute = false.");
+
+        foreach (var kvp in env)
+        {
+            startInfo.Environment[kvp.Key] = kvp.Value;
+        }
+    }
+
     private static async Task<int> GenerateSolution()
     {
         var solutionModel = new SolutionModel();

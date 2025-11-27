@@ -1,6 +1,6 @@
 using System.CommandLine;
 using System.Diagnostics;
-using System.Text.Json;
+// using System.Text.Json;
 
 namespace cxx;
 
@@ -39,11 +39,29 @@ public static class CommandLine
         SubCommand["devenv"].SetAction(async parseResult =>
         {
             var devEnv = await MSBuild.GetDevEnv();
+
             await MSBuild.SaveEnvToJson(devEnv);
+
             foreach (var kv in devEnv)
             {
                 Console.WriteLine($"{kv.Key} = {kv.Value}");
             }
+
+            var startInfo = new ProcessStartInfo("cmd")
+            {
+                Arguments = $"/c msbuild",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+
+            MSBuild.ApplyEnvToProcess(startInfo, devEnv);
+
+            using var process = Process.Start(startInfo)!;
+            string output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            Console.WriteLine(output);
         });
 
         // SubCommand["devenv"].SetAction(async parseResult =>
