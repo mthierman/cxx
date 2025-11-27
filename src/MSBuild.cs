@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Management.Automation;
 using System.Text.Json;
 using Microsoft.Build.Construction;
@@ -17,17 +18,21 @@ public static class MSBuild
 
     public static class DevEnvironmentTools
     {
-        public static Task<string> MSBuild => GetCommandFromDevEnv("MSBuild.exe");
-        public static Task<string> Lib => GetCommandFromDevEnv("lib.exe");
-        public static Task<string> Link => GetCommandFromDevEnv("link.exe");
-        public static Task<string> RC => GetCommandFromDevEnv("rc.exe");
-    }
+        private static readonly ConcurrentDictionary<string, Lazy<Task<string>>> _cache = new();
 
+        private static Task<string> GetTool(string toolName) =>
+            _cache.GetOrAdd(toolName, _ => new Lazy<Task<string>>(() => GetCommandFromDevEnv(toolName))).Value;
+
+        public static Task<string> MSBuild() => GetTool("MSBuild.exe");
+        public static Task<string> Lib() => GetTool("lib.exe");
+        public static Task<string> Link() => GetTool("link.exe");
+        public static Task<string> RC() => GetTool("rc.exe");
+    }
 
     public static class DevEnvironmentProvider
     {
         private static readonly Lazy<Task<Dictionary<string, string>>> _lazyEnv =
-            new(() => LoadOrCreateAsync());
+            new(LoadOrCreateAsync);
         public static Task<Dictionary<string, string>> Environment => _lazyEnv.Value;
 
         private static async Task<Dictionary<string, string>> LoadOrCreateAsync()

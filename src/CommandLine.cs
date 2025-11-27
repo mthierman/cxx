@@ -51,7 +51,7 @@ public static class CommandLine
             // var msbuild = await MSBuild.GetCommandFromDevEnv("msbuild");
             // Console.WriteLine(msbuild);
 
-            Console.WriteLine(await MSBuild.DevEnvironmentTools.MSBuild);
+            Console.WriteLine(await MSBuild.DevEnvironmentTools.MSBuild());
         });
 
         SubCommand["devenv_print"].SetAction(async parseResult =>
