@@ -19,24 +19,21 @@ public static class MSBuild
 
     public static class DevEnvironmentTools
     {
-        private static readonly Lazy<Task<ImmutableDictionary<string, string>>> _tools = new(async () =>
+        private static readonly Lazy<Task<ConcurrentDictionary<string, string>>> _tools = new(async () =>
         {
             var toolNames = new[] { "MSBuild.exe", "lib.exe", "link.exe", "rc.exe" };
-            var builder = ImmutableDictionary.CreateBuilder<string, string>(StringComparer.OrdinalIgnoreCase);
+            var dict = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             await Parallel.ForEachAsync(toolNames, async (tool, _) =>
             {
                 var path = await GetCommandFromDevEnv(tool);
-                lock (builder) // ImmutableDictionary.Builder is not thread-safe
-                {
-                    builder[tool] = path;
-                }
+                dict[tool] = path; // ConcurrentDictionary is thread-safe
             });
 
-            return builder.ToImmutable();
+            return dict;
         });
 
-        private static Task<ImmutableDictionary<string, string>> Tools => _tools.Value;
+        private static Task<ConcurrentDictionary<string, string>> Tools => _tools.Value;
 
         public static async Task<string> MSBuild() => (await Tools)["MSBuild.exe"];
         public static async Task<string> Lib() => (await Tools)["lib.exe"];
