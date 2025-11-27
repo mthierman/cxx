@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.Setup.Configuration;
 
 namespace cxx;
 
-public static class VSWhere
+public static class VisualStudio
 {
     public static async Task<int> Run(params string[]? args)
     {
