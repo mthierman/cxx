@@ -36,27 +36,27 @@ public static class CommandLine
             RootCommand.Subcommands.Add(command);
         }
 
-        SubCommand["devenv"].SetAction(async parseResult =>
-        {
-            // if (File.Exists(Project.SystemFolders.DevEnvJson))
-            //     File.Delete(Project.SystemFolders.DevEnvJson);
-            // var devEnv = await MSBuild.DevEnvironmentProvider.Environment;
-        });
+        // SubCommand["devenv"].SetAction(async parseResult =>
+        // {
+        //     if (File.Exists(Project.SystemFolders.DevEnvJson))
+        //         File.Delete(Project.SystemFolders.DevEnvJson);
+        //     var devEnv = await MSBuild.DevEnvironmentProvider.Environment;
+        // });
 
-        SubCommand["devenv_print"].SetAction(async parseResult =>
-        {
-            // var devEnv = await MSBuild.DevEnvironmentProvider.Environment;
+        // SubCommand["devenv_print"].SetAction(async parseResult =>
+        // {
+        //     var devEnv = await MSBuild.DevEnvironmentProvider.Environment;
 
-            // foreach (var kv in devEnv)
-            // {
-            //     Console.WriteLine($"{kv.Key} = {kv.Value}");
-            // }
-        });
+        //     foreach (var kv in devEnv)
+        //     {
+        //         Console.WriteLine($"{kv.Key} = {kv.Value}");
+        //     }
+        // });
 
-        SubCommand["devenv_msbuild"].SetAction(async parseResult =>
-        {
-            // return await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), "-version");
-        });
+        // SubCommand["devenv_msbuild"].SetAction(async parseResult =>
+        // {
+        //     return await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), "-version");
+        // });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
         {
