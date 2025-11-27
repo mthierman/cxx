@@ -40,12 +40,12 @@ public static class CommandLine
         {
             var devEnv = await MSBuild.DevEnv;
 
-            foreach (var kv in devEnv)
-            {
-                Console.WriteLine($"{kv.Key} = {kv.Value}");
-            }
+            // foreach (var kv in devEnv)
+            // {
+            //     Console.WriteLine($"{kv.Key} = {kv.Value}");
+            // }
 
-            return await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), "-version");
+            // return await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), "-version");
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>

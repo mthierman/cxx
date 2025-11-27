@@ -163,17 +163,17 @@ public static class MSBuild
         return lines[0];
     }
 
-    // public static async Task SaveEnvToJson(Dictionary<string, string> env)
-    // {
-    //     var options = new JsonSerializerOptions
-    //     {
-    //         WriteIndented = true,
-    //         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-    //     };
+    private static async Task SaveEnvToJson(Dictionary<string, string> env)
+    {
+        var options = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
 
-    //     using var stream = File.Create(Project.SystemFolders.DevEnvJson);
-    //     await JsonSerializer.SerializeAsync(stream, env, options);
-    // }
+        using var stream = File.Create(Path.Combine(Project.Paths.AppLocal, "DevEnv.json"));
+        await JsonSerializer.SerializeAsync(stream, env, options);
+    }
 
     public static void ApplyEnvToProcess(ProcessStartInfo startInfo, Dictionary<string, string> env)
     {
