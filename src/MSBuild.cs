@@ -88,35 +88,35 @@ public static class MSBuild
 
         private static async Task<Dictionary<string, string>> LoadOrCreateAsync()
         {
-            if (File.Exists(Project.SystemFolders.DevEnvJson))
-            {
-                try
-                {
-                    var json = await File.ReadAllTextAsync(Project.SystemFolders.DevEnvJson);
-                    var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            // if (File.Exists(Project.SystemFolders.DevEnvJson))
+            // {
+            //     try
+            //     {
+            //         var json = await File.ReadAllTextAsync(Project.SystemFolders.DevEnvJson);
+            //         var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
 
-                    if (dict is not null)
-                        return dict;
-                }
-                catch
-                {
-                }
-            }
+            //         if (dict is not null)
+            //             return dict;
+            //     }
+            //     catch
+            //     {
+            //     }
+            // }
 
             var fresh = await GetDevEnv();
 
-            try
-            {
-                var json = JsonSerializer.Serialize(fresh, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
+            // try
+            // {
+            //     var json = JsonSerializer.Serialize(fresh, new JsonSerializerOptions
+            //     {
+            //         WriteIndented = true
+            //     });
 
-                await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, json);
-            }
-            catch
-            {
-            }
+            //     await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, json);
+            // }
+            // catch
+            // {
+            // }
 
             return fresh;
         }
@@ -204,17 +204,17 @@ public static class MSBuild
         return lines[0];
     }
 
-    public static async Task SaveEnvToJson(Dictionary<string, string> env)
-    {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
+    // public static async Task SaveEnvToJson(Dictionary<string, string> env)
+    // {
+    //     var options = new JsonSerializerOptions
+    //     {
+    //         WriteIndented = true,
+    //         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    //     };
 
-        using var stream = File.Create(Project.SystemFolders.DevEnvJson);
-        await JsonSerializer.SerializeAsync(stream, env, options);
-    }
+    //     using var stream = File.Create(Project.SystemFolders.DevEnvJson);
+    //     await JsonSerializer.SerializeAsync(stream, env, options);
+    // }
 
     public static void ApplyEnvToProcess(ProcessStartInfo startInfo, Dictionary<string, string> env)
     {
