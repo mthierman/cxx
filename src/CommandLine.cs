@@ -79,7 +79,7 @@ public static class CommandLine
 
         SubCommand["install"].SetAction(async parseResult =>
         {
-            return ExternalCommand.RunVcpkg("install");
+            return await ExternalCommand.RunVcpkg("install");
         });
 
         SubCommand["generate"].SetAction(async parseResult =>
