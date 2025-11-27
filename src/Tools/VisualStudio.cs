@@ -15,6 +15,25 @@ public static class VisualStudio
         ? Path.Combine(path, "MSBuild", "Current", "Bin", "amd64", "MSBuild.exe")
         : null;
 
+    /// <summary>The path to cl.exe compiler of the latest Visual Studio instance (x64).</summary>
+    public static string? ClPath => LatestMSVCVersionPath() is string path
+        ? Path.Combine(path, "bin", "Hostx64", "x64", "cl.exe")
+        : null;
+
+    /// <summary>Finds the latest MSVC version folder inside VC\Tools\MSVC.</summary>
+    private static string? LatestMSVCVersionPath()
+    {
+        if (InstallPath is null) return null;
+
+        var vcRoot = Path.Combine(InstallPath, "VC", "Tools", "MSVC");
+        if (!Directory.Exists(vcRoot)) return null;
+
+        return Directory.GetDirectories(vcRoot)
+            .OrderByDescending(Path.GetFileName)
+            .FirstOrDefault();
+    }
+
+    /// <summary>Finds the latest installed Visual Studio instance.</summary>
     private static ISetupInstance? GetLatestInstance()
     {
         var setupConfig = new SetupConfiguration();

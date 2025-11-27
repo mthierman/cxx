@@ -51,6 +51,7 @@ public static class App
         {
             Console.WriteLine(VisualStudio.InstallPath);
             Console.WriteLine(VisualStudio.MSBuildPath);
+            Console.WriteLine(VisualStudio.ClPath);
         });
 
         SubCommand["devenv"].SetAction(async parseResult =>
