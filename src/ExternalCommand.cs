@@ -4,7 +4,7 @@ namespace cxx;
 
 public static class ExternalCommand
 {
-    public static async Task<int> Run(string? command, string[] args)
+    public static async Task<int> Run(string? command, params string[] args)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -25,7 +25,7 @@ public static class ExternalCommand
 
         await process.WaitForExitAsync();
 
-        return 0;
+        return process.ExitCode;
     }
 
     public static int RunVcpkg(params string[] arguments)

@@ -39,8 +39,6 @@ public static class CommandLine
         SubCommand["devenv"].SetAction(async parseResult =>
         {
             var devEnv = await MSBuild.DevEnvironmentProvider.Environment;
-
-            Console.WriteLine(await MSBuild.DevEnvironmentTools.MSBuild());
         });
 
         SubCommand["devenv_print"].SetAction(async parseResult =>
@@ -55,29 +53,25 @@ public static class CommandLine
 
         SubCommand["devenv_msbuild"].SetAction(async parseResult =>
         {
-            var msbuild = await MSBuild.DevEnvironmentTools.MSBuild();
+            await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), ["-version"]);
+            // var startInfo = new ProcessStartInfo(await MSBuild.DevEnvironmentTools.MSBuild())
+            // {
+            //     UseShellExecute = false,
+            //     Arguments = "-version",
+            //     RedirectStandardOutput = true,
+            //     RedirectStandardError = true
+            // };
 
-            Console.WriteLine(msbuild);
+            // using var process = Process.Start(startInfo)
+            //       ?? throw new InvalidOperationException("Failed to start MSBuild.");
 
-            var startInfo = new ProcessStartInfo(msbuild)
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
+            // var stdoutTask = process.StandardOutput.ReadToEndAsync();
+            // var stderrTask = process.StandardError.ReadToEndAsync();
 
-            foreach (var kv in devEnv)
-                startInfo.Environment[kv.Key] = kv.Value;
+            // await process.WaitForExitAsync();
 
-            using var process = Process.Start(startInfo)
-                  ?? throw new InvalidOperationException("Failed to start MSBuild.");
-
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
-
-            await process.WaitForExitAsync();
-
-            Console.WriteLine(await stdoutTask);
-            Console.Error.WriteLine(await stderrTask);
+            // Console.Write((await stdoutTask).TrimEnd());
+            // Console.Error.Write((await stderrTask).TrimEnd());
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
