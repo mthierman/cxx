@@ -15,6 +15,51 @@ public static class MSBuild
         Release
     }
 
+    public static class DevEnvironmentProvider
+    {
+        private static readonly Lazy<Task<Dictionary<string, string>>> _lazyEnv =
+            new(() => LoadOrCreateAsync());
+        public static Task<Dictionary<string, string>> Environment => _lazyEnv.Value;
+
+        private static async Task<Dictionary<string, string>> LoadOrCreateAsync()
+        {
+            if (File.Exists(Project.SystemFolders.DevEnvJson))
+            {
+                try
+                {
+                    var json = await File.ReadAllTextAsync(Project.SystemFolders.DevEnvJson);
+                    var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+
+                    if (dict is not null)
+                        return dict;
+                }
+                catch
+                {
+                }
+            }
+
+            var fresh = await GetDevEnv();
+
+            try
+            {
+                var json = JsonSerializer.Serialize(fresh, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+                await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, json);
+            }
+            catch
+            {
+            }
+
+            return fresh;
+        }
+    }
+
+    // public static readonly Dictionary<string, string> DeveloperEnvironment =
+    //     GetDevEnv().GetAwaiter().GetResult();
+
     public static async Task<Dictionary<string, string>> GetDevEnv()
     {
         var devPrompt = Find.DeveloperPrompt(Project.Tools.VSWhere);
@@ -42,7 +87,7 @@ public static class MSBuild
 
         var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var line in stdout.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+        foreach (var line in stdout.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
         {
             var trimmed = line.Trim();
             int eq = trimmed.IndexOf('=');
@@ -61,10 +106,16 @@ public static class MSBuild
 
     public static async Task<string> GetCommandFromDevEnv(string command)
     {
-        var devEnv = await GetDevEnv();
+        var devEnv = await DevEnvironmentProvider.Environment;
+
+        if (!devEnv.TryGetValue("PATH", out var pathValue) &&
+            !devEnv.TryGetValue("Path", out pathValue))
+        {
+            throw new KeyNotFoundException("PATH environment variable not found in developer environment.");
+        }
 
         string script = $@"
-            $env:PATH = '{devEnv["PATH"]}'
+            $env:PATH = '{pathValue}'
             where.exe {command}
         ";
 
