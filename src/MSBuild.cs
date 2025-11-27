@@ -16,42 +16,17 @@ public static class MSBuild
         Release
     }
 
-    public static Dictionary<string, string>? DevEnv;
-
-    public static async Task<ProcessStartInfo> DevEnvProcessStartInfo(string fileName)
-    {
-        if (DevEnv == null)
-            await RefreshDevEnv();
-
-        var startInfo = new ProcessStartInfo(fileName)
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-
-        foreach (var kv in DevEnv!)
-            startInfo.Environment[kv.Key] = kv.Value;
-
-        return startInfo;
-    }
-
-    public static async Task<int> RefreshDevEnv()
+    public static async Task<Dictionary<string, string>> GetDevEnv()
     {
         var devPrompt = Find.DeveloperPrompt(Project.Tools.VSWhere);
-
-        if (string.IsNullOrWhiteSpace(devPrompt) || !File.Exists(devPrompt))
-            throw new FileNotFoundException("Developer prompt .bat not found", devPrompt);
-
-        Console.WriteLine($"Using DevPrompt: {devPrompt}");
 
         var startInfo = new ProcessStartInfo("cmd.exe")
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            UseShellExecute = false
         };
 
-        startInfo.Arguments = $"/c call \"{devPrompt}\" && set";
+        startInfo.Arguments = $"/c call \"{devPrompt}\" -arch=amd64 -host_arch=amd64 && set";
 
         using var process = Process.Start(startInfo)!;
 
@@ -66,7 +41,6 @@ public static class MSBuild
         if (!string.IsNullOrEmpty(stderr))
             Console.Error.WriteLine(stderr);
 
-        // Parse "KEY=value" lines
         var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var line in stdout.Split(Environment.NewLine))
@@ -81,30 +55,10 @@ public static class MSBuild
             string key = line[..eq];
             string value = line[(eq + 1)..];
 
-            // Normalize: Windows stores Path as "Path"
-            // if (key.Equals("Path", StringComparison.OrdinalIgnoreCase))
-            //     key = "PATH";
-
             env[key] = value;
         }
 
-        // Save to static DevEnv
-        DevEnv = env;
-
-        // Output folder
-        Directory.CreateDirectory(Path.GetDirectoryName(Project.SystemFolders.AppLocal)!);
-
-        // JSON save
-        var jsonOptions = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
-
-        string json = JsonSerializer.Serialize(env, jsonOptions);
-        await File.WriteAllTextAsync(Project.SystemFolders.DevEnvJson, json);
-
-        return 0;
+        return env;
     }
 
 

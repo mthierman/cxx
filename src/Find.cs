@@ -53,6 +53,7 @@ public static class Find
         return launchVsDevShell;
     }
 
+    // https://learn.microsoft.com/en-us/visualstudio/ide/reference/command-prompt-powershell?view=visualstudio
     public static string DeveloperPrompt(string vswhere)
     {
         if (!File.Exists(vswhere))
