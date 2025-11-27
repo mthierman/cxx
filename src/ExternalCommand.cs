@@ -9,11 +9,13 @@ public static class ExternalCommand
         var startInfo = new ProcessStartInfo
         {
             FileName = command,
-            Arguments = string.Join(" ", args),
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
         };
+
+        foreach (var arg in args)
+            startInfo.ArgumentList.Add(arg);
 
         using var process = new Process { StartInfo = startInfo };
         process.OutputDataReceived += (s, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
