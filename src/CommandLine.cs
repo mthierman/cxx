@@ -39,7 +39,6 @@ public static class CommandLine
         SubCommand["devenv"].SetAction(async parseResult =>
         {
             var devEnv = await MSBuild.DevEnvironmentProvider.Environment;
-            await MSBuild.DevEnvironmentTools.Initialize();
 
             // var json = JsonSerializer.Serialize(devEnv, new JsonSerializerOptions
             // {

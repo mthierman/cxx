@@ -20,66 +20,56 @@ public static class MSBuild
     public static class DevEnvironmentTools
     {
         private static readonly string CacheFile = Path.Combine(Project.SystemFolders.AppLocal, "DevToolsCache.json");
-        private static ConcurrentDictionary<string, string>? _tools;
-        private static readonly SemaphoreSlim _initLock = new(1, 1);
-        private static readonly string[] _toolNames = { "MSBuild.exe", "lib.exe", "link.exe", "rc.exe" };
+        private static readonly string[] ToolNames = { "MSBuild.exe", "lib.exe", "link.exe", "rc.exe" };
 
-        // Ensure tools are initialized
-        private static async Task InitializeAsync()
+        private static readonly Lazy<Task<ConcurrentDictionary<string, string>>> _tools = new(async () =>
         {
-            if (_tools != null) return;
-
-            await _initLock.WaitAsync();
-            try
+            // Try load from JSON cache
+            if (File.Exists(CacheFile))
             {
-                if (_tools != null) return;
-
-                // Try load from JSON cache
-                if (File.Exists(CacheFile))
+                try
                 {
                     var json = await File.ReadAllTextAsync(CacheFile);
                     var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
                     if (dict != null)
-                    {
-                        _tools = new ConcurrentDictionary<string, string>(dict, StringComparer.OrdinalIgnoreCase);
-                        return;
-                    }
+                        return new ConcurrentDictionary<string, string>(dict, StringComparer.OrdinalIgnoreCase);
                 }
-
-                // Compute paths and cache
-                var dictCompute = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                await Parallel.ForEachAsync(_toolNames, async (tool, _) =>
+                catch
                 {
-                    var path = await GetCommandFromDevEnv(tool);
-                    dictCompute[tool] = path;
-                });
+                    // Ignore errors and recompute
+                }
+            }
 
-                _tools = dictCompute;
+            // Compute all tool paths in parallel
+            var dictCompute = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            await Parallel.ForEachAsync(ToolNames, async (tool, _) =>
+            {
+                var path = await GetCommandFromDevEnv(tool);
+                dictCompute[tool] = path;
+            });
 
-                // Save to JSON for next runs
-                var jsonSave = JsonSerializer.Serialize(_tools, new JsonSerializerOptions { WriteIndented = true });
+            // Save to JSON for next runs
+            try
+            {
+                var jsonSave = JsonSerializer.Serialize(dictCompute, new JsonSerializerOptions { WriteIndented = true });
                 await File.WriteAllTextAsync(CacheFile, jsonSave);
             }
-            finally
+            catch
             {
-                _initLock.Release();
+                // Ignore save errors
             }
-        }
 
-        // Synchronous accessor after initialization
-        private static string GetTool(string name)
-        {
-            if (_tools == null) throw new InvalidOperationException("DevEnvironmentTools not initialized. Call InitializeAsync() first.");
-            return _tools[name];
-        }
+            return dictCompute;
+        });
 
-        // Public API
-        public static async Task Initialize() => await InitializeAsync();
+        private static Task<ConcurrentDictionary<string, string>> Tools => _tools.Value;
 
-        public static string MSBuild() => GetTool("MSBuild.exe");
-        public static string Lib() => GetTool("lib.exe");
-        public static string Link() => GetTool("link.exe");
-        public static string RC() => GetTool("rc.exe");
+        private static async Task<string> GetTool(string name) => (await Tools)[name];
+
+        public static ValueTask<string> MSBuild() => new(GetTool("MSBuild.exe"));
+        public static ValueTask<string> Lib() => new(GetTool("lib.exe"));
+        public static ValueTask<string> Link() => new(GetTool("link.exe"));
+        public static ValueTask<string> RC() => new(GetTool("rc.exe"));
     }
 
     public static class DevEnvironmentProvider
