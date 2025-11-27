@@ -46,6 +46,7 @@ public static class CommandLine
             }
 
             Console.WriteLine("Testing MSBuild.exe --version...");
+
             return await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), "-version");
         });
 
