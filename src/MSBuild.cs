@@ -92,6 +92,38 @@ public static class MSBuild
         return env;
     }
 
+    public static async Task<string> GetCommandFromDevEnv(string command)
+    {
+        var devEnv = await GetDevEnv();
+
+        string script = $@"
+            $env:PATH = '{devEnv["PATH"]}'
+            where.exe {command}
+        ";
+
+        using var ps = PowerShell.Create();
+        ps.AddScript(script);
+
+        foreach (var kvp in devEnv)
+            ps.Runspace.SessionStateProxy.SetVariable(kvp.Key, kvp.Value);
+
+        var results = await Task.Run(() => ps.Invoke());
+
+        var lines = new List<string>();
+
+        foreach (var r in results)
+        {
+            var line = r?.ToString();
+            if (!string.IsNullOrWhiteSpace(line))
+                lines.Add(line);
+        }
+
+        if (lines.Count == 0)
+            throw new FileNotFoundException($"{command} not found in the developer environment PATH.");
+
+        return lines[0];
+    }
+
     public static async Task SaveEnvToJson(Dictionary<string, string> env)
     {
         var options = new JsonSerializerOptions

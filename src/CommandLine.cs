@@ -46,6 +46,12 @@ public static class CommandLine
                 Console.WriteLine($"{kv.Key} = {kv.Value}");
             }
 
+            var msbuild = await MSBuild.GetCommandFromDevEnv("msbuild");
+
+            Console.WriteLine(msbuild);
+
+            
+
             // var devEnv = await MSBuild.GetDevEnv();
 
             // await MSBuild.SaveEnvToJson(devEnv);
