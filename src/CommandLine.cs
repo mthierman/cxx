@@ -11,14 +11,16 @@ public static class CommandLine
     public static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {App.Version}");
     private static Argument<MSBuild.BuildConfiguration> BuildConfiguration = new("BuildConfiguration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
     private static Argument<string[]> MSBuildArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
+    private static Argument<string[]> NinjaBuildArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Argument<string[]> VcpkgArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
         // ["devenv"] = new Command("devenv", "Refresh developer environment"),
         // ["devenv_print"] = new Command("devenv_print", "Print developer environment"),
         // ["devenv_msbuild"] = new Command("devenv_msbuild", "Run MSBuild from developer environment"),
-        ["msbuild"] = new Command("msbuild", "MSBuild command") { MSBuildArguments },
-        ["vcpkg"] = new Command("vcpkg", "vcpkg command") { VcpkgArguments },
+        ["msbuild"] = new Command("msbuild") { MSBuildArguments },
+        ["ninja"] = new Command("ninja") { NinjaBuildArguments },
+        ["vcpkg"] = new Command("vcpkg") { VcpkgArguments },
         ["new"] = new Command("new", "New project"),
         ["install"] = new Command("install", "Install project dependencies"),
         ["generate"] = new Command("generate", "Generate project build"),
@@ -63,6 +65,13 @@ public static class CommandLine
             var args = parseResult.GetValue(MSBuildArguments) ?? Array.Empty<string>();
 
             return await ExternalCommand.Run(Project.Tools.MSBuild, args);
+        });
+
+        SubCommand["ninja"].SetAction(async parseResult =>
+        {
+            var args = parseResult.GetValue(NinjaBuildArguments) ?? Array.Empty<string>();
+
+            return await ExternalCommand.Run("ninja.exe", args);
         });
 
         SubCommand["vcpkg"].SetAction(async parseResult =>
