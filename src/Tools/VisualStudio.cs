@@ -1,54 +1,59 @@
-using System.Diagnostics;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Microsoft.VisualStudio.Setup.Configuration;
-
-namespace cxx;
 
 public static class VisualStudio
 {
-    public static async Task<int> Run(params string[]? args)
-    {
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = Project.Tools.VSWhere,
-            UseShellExecute = false,
-            RedirectStandardOutput = false,
-            RedirectStandardError = false,
-            CreateNoWindow = false
-        };
+    private static readonly Lazy<IReadOnlyList<ISetupInstance>> _instances = new(GetAllInstances);
 
-        return await ExternalCommand.Run(startInfo, args);
-    }
+    /// <summary>
+    /// All installed Visual Studio instances.
+    /// </summary>
+    public static IReadOnlyList<ISetupInstance> Instances => _instances.Value;
 
-    public static async Task<int> Print()
+    /// <summary>
+    /// The latest installed Visual Studio instance, regardless of edition.
+    /// </summary>
+    public static ISetupInstance? Latest => Instances
+        .OrderByDescending(i => i.GetInstallationVersion())
+        .FirstOrDefault();
+
+    /// <summary>
+    /// The installation path of the latest Visual Studio instance.
+    /// </summary>
+    public static string? InstallPath => Latest?.GetInstallationPath();
+
+    /// <summary>
+    /// Returns only Build Tools instances.
+    /// </summary>
+    public static IReadOnlyList<ISetupInstance> BuildTools => Instances
+        .Where(i => i.GetInstallationName().Contains("BuildTools", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    /// <summary>
+    /// Returns the latest Build Tools instance.
+    /// </summary>
+    public static ISetupInstance? LatestBuildTools => BuildTools
+        .OrderByDescending(i => i.GetInstallationVersion())
+        .FirstOrDefault();
+
+    private static IReadOnlyList<ISetupInstance> GetAllInstances()
     {
         var setupConfig = new SetupConfiguration();
-        var enumInstances = setupConfig.EnumAllInstances(); // returns IEnumSetupInstances
+        var enumInstances = setupConfig.EnumAllInstances();
 
-        ISetupInstance[] instances = new ISetupInstance[1];
-        int fetched = 0;
-
-        ISetupInstance? latestInstance = null;
-
-        // Loop until Next returns 0 items
-        do
+        IEnumerable<ISetupInstance> Enumerate()
         {
-            enumInstances.Next(1, instances, out fetched); // returns void, fetched tells how many items
-            if (fetched == 0) break;
-
-            var instance = instances[0];
-            if (latestInstance == null ||
-                string.Compare(instance.GetInstallationVersion(), latestInstance.GetInstallationVersion(), StringComparison.Ordinal) > 0)
+            var buffer = new ISetupInstance[1];
+            int fetched;
+            do
             {
-                latestInstance = instance;
-            }
-
-        } while (fetched > 0);
-
-        if (latestInstance != null)
-        {
-            Console.WriteLine($"Latest VS install path: {latestInstance.GetInstallationPath()}");
+                enumInstances.Next(1, buffer, out fetched);
+                if (fetched > 0) yield return buffer[0];
+            } while (fetched > 0);
         }
 
-        return 0;
+        return Enumerate().ToList();
     }
 }

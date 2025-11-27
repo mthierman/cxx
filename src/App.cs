@@ -24,6 +24,7 @@ public static class App
     private static Argument<string[]> VcpkgArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
+        ["vs"] = new Command("vs", "Visual Studio"),
         ["devenv"] = new Command("devenv", "Refresh developer environment"),
         ["vswhere"] = new Command("vswhere") { VSWhereArguments },
         ["msbuild"] = new Command("msbuild") { MSBuildArguments },
@@ -45,6 +46,13 @@ public static class App
         {
             RootCommand.Subcommands.Add(command);
         }
+
+        SubCommand["vs"].SetAction(async parseResult =>
+        {
+            var installPath = VisualStudio.InstallPath;
+
+            Console.WriteLine(installPath);
+        });
 
         SubCommand["devenv"].SetAction(async parseResult =>
         {
