@@ -18,12 +18,14 @@ public static class App
     private static readonly SemaphoreSlim ConsoleLock = new SemaphoreSlim(1, 1);
     private static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {App.Version}");
     private static Argument<MSBuild.BuildConfiguration> BuildConfiguration = new("BuildConfiguration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
+    private static Argument<string[]> VSWhereArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Argument<string[]> MSBuildArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Argument<string[]> NinjaArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Argument<string[]> VcpkgArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
         ["devenv"] = new Command("devenv", "Refresh developer environment"),
+        ["vswhere"] = new Command("vswhere") { VSWhereArguments },
         ["msbuild"] = new Command("msbuild") { MSBuildArguments },
         ["ninja"] = new Command("ninja") { NinjaArguments },
         ["vcpkg"] = new Command("vcpkg") { VcpkgArguments },
@@ -60,6 +62,11 @@ public static class App
 
             // await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), "-version");
             // return await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.RC(), "-version");
+        });
+
+        SubCommand["vswhere"].SetAction(async parseResult =>
+        {
+            return await VSWhere.Run(parseResult.GetValue(VSWhereArguments));
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
