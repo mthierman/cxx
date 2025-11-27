@@ -43,17 +43,16 @@ public static class MSBuild
 
         var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var line in stdout.Split(Environment.NewLine))
+        foreach (var line in stdout.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
         {
-            if (string.IsNullOrWhiteSpace(line))
-                continue;
+            var trimmed = line.Trim();
+            int eq = trimmed.IndexOf('=');
 
-            int eq = line.IndexOf('=');
             if (eq <= 0)
                 continue;
 
-            string key = line[..eq];
-            string value = line[(eq + 1)..];
+            string key = trimmed[..eq];
+            string value = trimmed[(eq + 1)..];
 
             env[key] = value;
         }
@@ -61,6 +60,10 @@ public static class MSBuild
         return env;
     }
 
+    // public static void DevEnvToJson()
+    // {
+
+    // }
 
     private static async Task<int> GenerateSolution()
     {
