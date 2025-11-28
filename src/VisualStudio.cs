@@ -21,7 +21,7 @@ public static class VisualStudio
     private static readonly Lazy<Task<Dictionary<string, string>>> _lazyEnv =
         new(async () =>
         {
-            var devPrompt = App.Find.DeveloperPrompt(App.Paths.Tools.VSWhere);
+            var devPrompt = App.Find.DeveloperPrompt(VSWherePath);
 
             var startInfo = new ProcessStartInfo("cmd.exe")
             {
@@ -238,16 +238,16 @@ public static class VisualStudio
 
     public static async Task<int> Build(BuildConfiguration config)
     {
-        Directory.CreateDirectory(App.Paths.Core.Build);
+        Directory.CreateDirectory(App.Paths.Project.Build);
 
         if (await Generate() != 0)
             return 1;
 
-        if (string.IsNullOrWhiteSpace(App.Paths.Tools.MSBuild))
+        if (string.IsNullOrWhiteSpace(MSBuildPath))
             throw new InvalidOperationException("MSBuild path not set.");
 
         var args = $"-nologo -v:minimal /p:Configuration={(config == BuildConfiguration.Debug ? "Debug" : "Release")} /p:Platform=x64";
-        var process = Process.Start(new ProcessStartInfo(App.Paths.Tools.MSBuild, args) { WorkingDirectory = App.Paths.Core.Build }) ?? throw new InvalidOperationException("Failed to start MSBuild");
+        var process = Process.Start(new ProcessStartInfo(MSBuildPath, args) { WorkingDirectory = App.Paths.Project.Build }) ?? throw new InvalidOperationException("Failed to start MSBuild");
         process.WaitForExit();
 
         Console.Error.WriteLine();
@@ -257,24 +257,24 @@ public static class VisualStudio
 
     public static int Clean()
     {
-        if (!Directory.Exists(App.Paths.Core.Build))
+        if (!Directory.Exists(App.Paths.Project.Build))
             return 1;
 
         string[] dirs = { "debug", "release" };
 
         foreach (string dir in dirs)
         {
-            var markedDir = Path.Combine(App.Paths.Core.Build, dir);
+            var markedDir = Path.Combine(App.Paths.Project.Build, dir);
 
             if (Directory.Exists(markedDir))
                 Directory.Delete(markedDir, true);
         }
 
-        string[] files = { App.Paths.Core.SolutionFile, App.Paths.Core.ProjectFile };
+        string[] files = { App.Paths.Project.SolutionFile, App.Paths.Project.ProjectFile };
 
         foreach (string file in files)
         {
-            var markedFile = Path.Combine(App.Paths.Core.Build, file);
+            var markedFile = Path.Combine(App.Paths.Project.Build, file);
 
             if (File.Exists(markedFile))
                 File.Delete(markedFile);
@@ -330,7 +330,7 @@ public static class VisualStudio
 
         solutionProject.Id = Guid.NewGuid();
 
-        await SolutionSerializers.SlnXml.SaveAsync(App.Paths.Core.SolutionFile, solutionModel, new CancellationToken());
+        await SolutionSerializers.SlnXml.SaveAsync(App.Paths.Project.SolutionFile, solutionModel, new CancellationToken());
 
         return 0;
     }
@@ -485,22 +485,22 @@ public static class VisualStudio
         vcpkg.AddProperty("VcpkgUseMD", "true");
 
         // ----- 15. Add sources from "src" folder -----
-        var sourceFiles = Directory.GetFiles(App.Paths.Core.Src, "*.cpp");
-        var moduleFiles = Directory.GetFiles(App.Paths.Core.Src, "*.ixx");
-        var headerFiles = Directory.GetFiles(App.Paths.Core.Src, "*.h");
+        var sourceFiles = Directory.GetFiles(App.Paths.Project.Src, "*.cpp");
+        var moduleFiles = Directory.GetFiles(App.Paths.Project.Src, "*.ixx");
+        var headerFiles = Directory.GetFiles(App.Paths.Project.Src, "*.h");
 
         var sources = project.AddItemGroup();
 
         foreach (var sourceFile in sourceFiles)
-            sources.AddItem("ClCompile", Path.GetRelativePath(App.Paths.Core.Build, sourceFile).Replace('\\', '/'));
+            sources.AddItem("ClCompile", Path.GetRelativePath(App.Paths.Project.Build, sourceFile).Replace('\\', '/'));
 
         foreach (var moduleFile in moduleFiles)
-            sources.AddItem("ClCompile", Path.GetRelativePath(App.Paths.Core.Build, moduleFile).Replace('\\', '/'));
+            sources.AddItem("ClCompile", Path.GetRelativePath(App.Paths.Project.Build, moduleFile).Replace('\\', '/'));
 
         foreach (var headerFile in headerFiles)
-            sources.AddItem("ClInclude", Path.GetRelativePath(App.Paths.Core.Build, headerFile).Replace('\\', '/'));
+            sources.AddItem("ClInclude", Path.GetRelativePath(App.Paths.Project.Build, headerFile).Replace('\\', '/'));
 
-        project.Save(App.Paths.Core.ProjectFile);
+        project.Save(App.Paths.Project.ProjectFile);
 
         return 0;
     }

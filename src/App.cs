@@ -23,13 +23,10 @@ public static class App
             public static string FullPath = Path.Combine(AppLocal, "cxx.jsonc");
         }
 
-        private static readonly Lazy<CorePaths> _corePaths = new(InitCorePaths);
-        private static readonly Lazy<ToolsPaths> _toolPaths = new(InitToolsPaths);
+        private static readonly Lazy<ProjectPaths> _project = new(InitProjectPaths);
+        public static ProjectPaths Project => _project.Value;
 
-        public static CorePaths Core => _corePaths.Value;
-        public static ToolsPaths Tools => _toolPaths.Value;
-
-        public sealed record CorePaths(
+        public sealed record ProjectPaths(
             string ProjectRoot,
             string Manifest,
             string Src,
@@ -37,13 +34,7 @@ public static class App
             string SolutionFile,
             string ProjectFile);
 
-        public sealed record ToolsPaths(
-            string VSWhere,
-            string MSBuild,
-            string Vcpkg,
-            string ClangFormat);
-
-        private static CorePaths InitCorePaths()
+        private static ProjectPaths InitProjectPaths()
         {
             var cwd = Environment.CurrentDirectory;
             var root = string.Empty;
@@ -66,20 +57,6 @@ public static class App
                 Build: Path.Combine(root, "build"),
                 SolutionFile: Path.Combine(root, "build", "app.slnx"),
                 ProjectFile: Path.Combine(root, "build", "app.vcxproj"));
-        }
-
-        private static ToolsPaths InitToolsPaths()
-        {
-            var vswhere = Path.Combine(
-                            Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-                            "Microsoft Visual Studio", "Installer", "vswhere.exe");
-
-            return new(
-                VSWhere: vswhere,
-                MSBuild: Find.MSBuild(vswhere),
-                Vcpkg: Find.Vcpkg(),
-                ClangFormat: Find.ClangFormat()
-            );
         }
     }
 
@@ -145,10 +122,10 @@ public static class App
 
         await Run(startInfo, "new", "--application");
 
-        if (!Directory.Exists(App.Paths.Core.Src))
-            Directory.CreateDirectory(App.Paths.Core.Src);
+        if (!Directory.Exists(Paths.Project.Src))
+            Directory.CreateDirectory(Paths.Project.Src);
 
-        var app_cpp = Path.Combine(App.Paths.Core.Src, "app.cpp");
+        var app_cpp = Path.Combine(Paths.Project.Src, "app.cpp");
 
         if (!File.Exists(app_cpp))
         {
@@ -285,7 +262,7 @@ public static class App
         {
             await VisualStudio.Build(parseResult.GetValue(BuildConfiguration));
 
-            Process.Start(new ProcessStartInfo(Path.Combine(Paths.Core.Build, parseResult.GetValue(BuildConfiguration) == VisualStudio.BuildConfiguration.Debug ? "debug" : "release", "app.exe")))?.WaitForExit();
+            Process.Start(new ProcessStartInfo(Path.Combine(Paths.Project.Build, parseResult.GetValue(BuildConfiguration) == VisualStudio.BuildConfiguration.Debug ? "debug" : "release", "app.exe")))?.WaitForExit();
 
             return 0;
         });
