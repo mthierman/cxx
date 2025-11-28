@@ -1,4 +1,4 @@
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
@@ -7,6 +7,11 @@ namespace CXX;
 
 public static class App
 {
+    public static int Main(string[] args)
+    {
+        return Commands.Root.Parse(args).Invoke();
+    }
+
     public static readonly string Name = "cxx";
     public static readonly string FileName = $"{Name}.exe";
     public static readonly string Version = Assembly.GetExecutingAssembly()
@@ -38,9 +43,9 @@ public static class App
         public static string version = "0.0.0";
     }
 
-    public static class Root
+    public static class Commands
     {
-        public static RootCommand Command = new($"C++ build tool\nversion {Version}");
+        public static RootCommand Root = new($"C++ build tool\nversion {Version}");
         private static Argument<BuildConfiguration> Config = new("Config") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
         private static Argument<string[]> VSWhereArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> MSBuildArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
@@ -63,11 +68,11 @@ public static class App
             ["vcpkg"] = new Command("vcpkg") { VcpkgArgs },
         };
 
-        static Root()
+        static Commands()
         {
             foreach (var command in SubCommand.Values)
             {
-                Command.Subcommands.Add(command);
+                Root.Subcommands.Add(command);
             }
 
             SubCommand["new"].SetAction(async parseResult =>
@@ -225,7 +230,7 @@ public static class App
     public static async Task<int> PrintHelp()
     {
         Print.Err();
-        return await Root.Command.Parse("--help").InvokeAsync();
+        return await Commands.Root.Parse("--help").InvokeAsync();
     }
 
     public static class Print
@@ -275,11 +280,6 @@ public static class App
         processInfo.EnvironmentVariables["VCPKG_DEFAULT_TRIPLET"] = "x64-windows-static-md";
         processInfo.EnvironmentVariables["VCPKG_DEFAULT_HOST_TRIPLET"] = "x64-windows-static-md";
         return await Run(processInfo, "install");
-    }
-
-    public static int Start(string[] args)
-    {
-        return Root.Command.Parse(args).Invoke();
     }
 
     public static async Task<int> Run(ProcessStartInfo processStartInfo, params string[]? arguments)
@@ -347,3 +347,5 @@ public static class App
             string ProjectFile);
     }
 }
+
+// return CXX.App.Start(args);
