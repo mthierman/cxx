@@ -21,6 +21,12 @@ public static class App
           .InformationalVersion ?? "0.0.0";
     }
 
+    public static class Config
+    {
+        public static string name = $"{MetaData.Name}-project";
+        public static string version = "0.0.0";
+    }
+
     public enum BuildConfiguration
     {
         Debug,
@@ -38,12 +44,6 @@ public static class App
         public static ProcessStartInfo Vcpkg => new() { FileName = VisualStudio.VcpkgPath };
         public static ProcessStartInfo Ninja => new() { FileName = VisualStudio.NinjaPath };
         public static ProcessStartInfo ClangFormat => new() { FileName = VisualStudio.ClangFormatPath };
-    }
-
-    public static class Config
-    {
-        public static string name = $"{MetaData.Name}-project";
-        public static string version = "0.0.0";
     }
 
     public static class Commands
@@ -350,5 +350,3 @@ public static class App
             string ProjectFile);
     }
 }
-
-// return CXX.App.Start(args);
