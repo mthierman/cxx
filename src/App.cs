@@ -85,7 +85,7 @@ public static class App
             {
                 Console.ForegroundColor = ConsoleColor.Red;
 
-                Console.Error.WriteLine("Directory is not empty. cxx.jsonc:");
+                Console.Error.WriteLine($"Directory is not empty. {Paths.ManifestFileName}:");
 
                 var manifestFile = Path.Combine(Environment.CurrentDirectory, Paths.ManifestFileName);
 
