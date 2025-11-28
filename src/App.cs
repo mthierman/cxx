@@ -9,6 +9,7 @@ public static class App
     public static string Version { get; } = Assembly.GetExecutingAssembly()
               .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
               .InformationalVersion ?? "0.0.0";
+    public static readonly string ManifestFileName = "cxx.jsonc";
 
     public static class Paths
     {
@@ -17,17 +18,11 @@ public static class App
         public static readonly string AppLocal = Path.Combine(Local, "cxx");
         public static readonly string AppRoaming = Path.Combine(Roaming, "cxx");
 
-        public static class Manifest
-        {
-            public static string FileName = "cxx.jsonc";
-            public static string FullPath = Path.Combine(AppLocal, "cxx.jsonc");
-        }
-
         private static readonly Lazy<ProjectPaths> _project = new(InitProjectPaths);
         public static ProjectPaths Project => _project.Value;
 
         public sealed record ProjectPaths(
-            string ProjectRoot,
+            string Root,
             string Manifest,
             string Src,
             string Build,
@@ -41,18 +36,18 @@ public static class App
 
             while (!string.IsNullOrEmpty(cwd))
             {
-                if (File.Exists(Path.Combine(cwd, Manifest.FileName)))
+                if (File.Exists(Path.Combine(cwd, ManifestFileName)))
                     root = cwd;
 
                 cwd = Directory.GetParent(cwd)?.FullName;
             }
 
             if (string.IsNullOrEmpty(root))
-                throw new FileNotFoundException($"No {Manifest.FileName}");
+                throw new FileNotFoundException($"No {ManifestFileName}");
 
             return new(
-                ProjectRoot: root,
-                Manifest: Path.Combine(root, Manifest.FileName),
+                Root: root,
+                Manifest: Path.Combine(root, ManifestFileName),
                 Src: Path.Combine(root, "src"),
                 Build: Path.Combine(root, "build"),
                 SolutionFile: Path.Combine(root, "build", "app.slnx"),
@@ -101,7 +96,7 @@ public static class App
         var vcpkgManifest = Path.Combine(cwd, "vcpkg.json");
         var vcpkgConfig = Path.Combine(cwd, "vcpkg-configuration.json");
 
-        if (File.Exists(Path.Combine(cwd, Paths.Manifest.FileName)) || File.Exists(vcpkgManifest) || File.Exists(vcpkgConfig))
+        if (File.Exists(Path.Combine(cwd, ManifestFileName)) || File.Exists(vcpkgManifest) || File.Exists(vcpkgConfig))
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine("Project already has a manifest file");
@@ -110,7 +105,7 @@ public static class App
             return 1;
         }
 
-        await File.WriteAllTextAsync(Path.Combine(cwd, Paths.Manifest.FileName), "{}");
+        await File.WriteAllTextAsync(Path.Combine(cwd, ManifestFileName), "{}");
 
         var startInfo = new ProcessStartInfo
         {
