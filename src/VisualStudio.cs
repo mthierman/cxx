@@ -18,151 +18,151 @@ public static class VisualStudio
     }
 
     private static readonly SemaphoreSlim ConsoleLock = new SemaphoreSlim(1, 1);
-    public static Task<Dictionary<string, string>> DevEnv => _lazyEnv.Value;
-    private static readonly Lazy<Task<Dictionary<string, string>>> _lazyEnv =
-        new(async () =>
-        {
-            var devPrompt = App.Find.DeveloperPrompt(VSWherePath);
+    // public static Task<Dictionary<string, string>> DevEnv => _lazyEnv.Value;
+    // private static readonly Lazy<Task<Dictionary<string, string>>> _lazyEnv =
+    //     new(async () =>
+    //     {
+    //         var devPrompt = App.Find.DeveloperPrompt(VSWherePath);
 
-            var startInfo = new ProcessStartInfo("cmd.exe")
-            {
-                Arguments = $"/c call \"{devPrompt}\" -arch=amd64 -host_arch=amd64 && set",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
+    //         var startInfo = new ProcessStartInfo("cmd.exe")
+    //         {
+    //             Arguments = $"/c call \"{devPrompt}\" -arch=amd64 -host_arch=amd64 && set",
+    //             UseShellExecute = false,
+    //             RedirectStandardOutput = true,
+    //             RedirectStandardError = true,
+    //         };
 
-            using var process = Process.Start(startInfo)
-                ?? throw new Exception("Failed to start dev environment capture process");
+    //         using var process = Process.Start(startInfo)
+    //             ?? throw new Exception("Failed to start dev environment capture process");
 
-            var stdoutTask = process.StandardOutput.ReadToEndAsync();
-            var stderrTask = process.StandardError.ReadToEndAsync();
+    //         var stdoutTask = process.StandardOutput.ReadToEndAsync();
+    //         var stderrTask = process.StandardError.ReadToEndAsync();
 
-            await process.WaitForExitAsync();
+    //         await process.WaitForExitAsync();
 
-            var stdout = await stdoutTask;
-            var stderr = await stderrTask;
+    //         var stdout = await stdoutTask;
+    //         var stderr = await stderrTask;
 
-            if (!string.IsNullOrWhiteSpace(stderr))
-                Console.Error.WriteLine(stderr);
+    //         if (!string.IsNullOrWhiteSpace(stderr))
+    //             Console.Error.WriteLine(stderr);
 
-            var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    //         var env = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var line in stdout.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
-            {
-                int eq = line.IndexOf('=');
-                if (eq <= 0)
-                    continue;
+    //         foreach (var line in stdout.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries))
+    //         {
+    //             int eq = line.IndexOf('=');
+    //             if (eq <= 0)
+    //                 continue;
 
-                var key = line[..eq];
-                var value = line[(eq + 1)..];
+    //             var key = line[..eq];
+    //             var value = line[(eq + 1)..];
 
-                env[key] = value;
-            }
+    //             env[key] = value;
+    //         }
 
-            return env;
-        });
+    //         return env;
+    //     });
 
-    public static class DevEnvironmentTools
-    {
-        private static readonly string CacheFile = Path.Combine(App.Paths.AppLocal, "DevToolsCache.json");
-        private static readonly string[] ToolNames = { "MSBuild.exe", "lib.exe", "link.exe", "rc.exe" };
+    // public static class DevEnvironmentTools
+    // {
+    //     private static readonly string CacheFile = Path.Combine(App.Paths.AppLocal, "DevToolsCache.json");
+    //     private static readonly string[] ToolNames = { "MSBuild.exe", "lib.exe", "link.exe", "rc.exe" };
 
-        // Lazy cache: either load synchronously from JSON or compute async if needed
-        private static readonly Lazy<Task<ConcurrentDictionary<string, string>>> _tools = new(() =>
-        {
-            // If JSON exists, load synchronously for instant access
-            if (File.Exists(CacheFile))
-            {
-                try
-                {
-                    var json = File.ReadAllText(CacheFile);
-                    var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-                    if (dict != null)
-                        return Task.FromResult(new ConcurrentDictionary<string, string>(dict, StringComparer.OrdinalIgnoreCase));
-                }
-                catch
-                {
-                    // Ignore errors and fall back to async computation
-                }
-            }
+    //     // Lazy cache: either load synchronously from JSON or compute async if needed
+    //     private static readonly Lazy<Task<ConcurrentDictionary<string, string>>> _tools = new(() =>
+    //     {
+    //         // If JSON exists, load synchronously for instant access
+    //         if (File.Exists(CacheFile))
+    //         {
+    //             try
+    //             {
+    //                 var json = File.ReadAllText(CacheFile);
+    //                 var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+    //                 if (dict != null)
+    //                     return Task.FromResult(new ConcurrentDictionary<string, string>(dict, StringComparer.OrdinalIgnoreCase));
+    //             }
+    //             catch
+    //             {
+    //                 // Ignore errors and fall back to async computation
+    //             }
+    //         }
 
-            // Otherwise compute asynchronously
-            return ComputeToolsAsync();
-        });
+    //         // Otherwise compute asynchronously
+    //         return ComputeToolsAsync();
+    //     });
 
-        private static async Task<ConcurrentDictionary<string, string>> ComputeToolsAsync()
-        {
-            var dict = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    //     private static async Task<ConcurrentDictionary<string, string>> ComputeToolsAsync()
+    //     {
+    //         var dict = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            await Parallel.ForEachAsync(ToolNames, async (tool, _) =>
-            {
-                var path = await GetCommandFromDevEnv(tool);
-                dict[tool] = path;
-            });
+    //         await Parallel.ForEachAsync(ToolNames, async (tool, _) =>
+    //         {
+    //             var path = await GetCommandFromDevEnv(tool);
+    //             dict[tool] = path;
+    //         });
 
-            // Save JSON for next runs
-            try
-            {
-                var jsonSave = JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true });
-                await File.WriteAllTextAsync(CacheFile, jsonSave);
-            }
-            catch
-            {
-                // ignore save errors
-            }
+    //         // Save JSON for next runs
+    //         try
+    //         {
+    //             var jsonSave = JsonSerializer.Serialize(dict, new JsonSerializerOptions { WriteIndented = true });
+    //             await File.WriteAllTextAsync(CacheFile, jsonSave);
+    //         }
+    //         catch
+    //         {
+    //             // ignore save errors
+    //         }
 
-            return dict;
-        }
+    //         return dict;
+    //     }
 
-        private static Task<ConcurrentDictionary<string, string>> Tools => _tools.Value;
+    //     private static Task<ConcurrentDictionary<string, string>> Tools => _tools.Value;
 
-        private static async Task<string> GetTool(string name) => (await Tools)[name];
+    //     private static async Task<string> GetTool(string name) => (await Tools)[name];
 
-        // Public accessors using ValueTask for minimal overhead
-        public static ValueTask<string> MSBuild() => new(GetTool("MSBuild.exe"));
-        public static ValueTask<string> Lib() => new(GetTool("lib.exe"));
-        public static ValueTask<string> Link() => new(GetTool("link.exe"));
-        public static ValueTask<string> RC() => new(GetTool("rc.exe"));
-    }
+    //     // Public accessors using ValueTask for minimal overhead
+    //     public static ValueTask<string> MSBuild() => new(GetTool("MSBuild.exe"));
+    //     public static ValueTask<string> Lib() => new(GetTool("lib.exe"));
+    //     public static ValueTask<string> Link() => new(GetTool("link.exe"));
+    //     public static ValueTask<string> RC() => new(GetTool("rc.exe"));
+    // }
 
-    public static async Task<string> GetCommandFromDevEnv(string command)
-    {
-        var devEnv = await DevEnv;
+    // public static async Task<string> GetCommandFromDevEnv(string command)
+    // {
+    //     var devEnv = await DevEnv;
 
-        if (!devEnv.TryGetValue("PATH", out var pathValue) &&
-            !devEnv.TryGetValue("Path", out pathValue))
-        {
-            throw new KeyNotFoundException("PATH environment variable not found in developer environment.");
-        }
+    //     if (!devEnv.TryGetValue("PATH", out var pathValue) &&
+    //         !devEnv.TryGetValue("Path", out pathValue))
+    //     {
+    //         throw new KeyNotFoundException("PATH environment variable not found in developer environment.");
+    //     }
 
-        string script = $@"
-            $env:PATH = '{pathValue}'
-            where.exe {command}
-        ";
+    //     string script = $@"
+    //         $env:PATH = '{pathValue}'
+    //         where.exe {command}
+    //     ";
 
-        using var ps = PowerShell.Create();
-        ps.AddScript(script);
+    //     using var ps = PowerShell.Create();
+    //     ps.AddScript(script);
 
-        foreach (var kvp in devEnv)
-            ps.Runspace.SessionStateProxy.SetVariable(kvp.Key, kvp.Value);
+    //     foreach (var kvp in devEnv)
+    //         ps.Runspace.SessionStateProxy.SetVariable(kvp.Key, kvp.Value);
 
-        var results = await Task.Run(() => ps.Invoke());
+    //     var results = await Task.Run(() => ps.Invoke());
 
-        var lines = new List<string>();
+    //     var lines = new List<string>();
 
-        foreach (var r in results)
-        {
-            var line = r?.ToString();
-            if (!string.IsNullOrWhiteSpace(line))
-                lines.Add(line);
-        }
+    //     foreach (var r in results)
+    //     {
+    //         var line = r?.ToString();
+    //         if (!string.IsNullOrWhiteSpace(line))
+    //             lines.Add(line);
+    //     }
 
-        if (lines.Count == 0)
-            throw new FileNotFoundException($"{command} not found in the developer environment PATH.");
+    //     if (lines.Count == 0)
+    //         throw new FileNotFoundException($"{command} not found in the developer environment PATH.");
 
-        return lines[0];
-    }
+    //     return lines[0];
+    // }
 
     private static readonly SetupConfiguration setupConfiguration = new SetupConfiguration();
     private static readonly Lazy<ISetupInstance?> _latest = new(GetLatestInstance);
@@ -289,18 +289,18 @@ public static class VisualStudio
         return 0;
     }
 
-    public static async Task<string> GetWindowsSdkExecutablePath()
-    {
-        var devEnv = await DevEnv;
+    // public static async Task<string> GetWindowsSdkExecutablePath()
+    // {
+    //     var devEnv = await DevEnv;
 
-        if (!devEnv.TryGetValue("WindowsSdkVerBinPath", out var sdkPath))
-            throw new KeyNotFoundException("WindowsSdkVerBinPath not found in developer environment.");
+    //     if (!devEnv.TryGetValue("WindowsSdkVerBinPath", out var sdkPath))
+    //         throw new KeyNotFoundException("WindowsSdkVerBinPath not found in developer environment.");
 
-        if (!Directory.Exists(sdkPath))
-            throw new DirectoryNotFoundException($"Windows SDK path does not exist: {sdkPath}");
+    //     if (!Directory.Exists(sdkPath))
+    //         throw new DirectoryNotFoundException($"Windows SDK path does not exist: {sdkPath}");
 
-        return Path.Combine(sdkPath, "x64");
-    }
+    //     return Path.Combine(sdkPath, "x64");
+    // }
 
     private static async Task SaveEnvToJson(Dictionary<string, string> env)
     {
