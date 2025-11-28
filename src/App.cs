@@ -18,18 +18,7 @@ public static class App
         public static readonly string AppLocal = Path.Combine(Local, "cxx");
         public static readonly string AppRoaming = Path.Combine(Roaming, "cxx");
 
-        private static readonly Lazy<ProjectPaths> _project = new(InitProjectPaths);
-        public static ProjectPaths Project => _project.Value;
-
-        public sealed record ProjectPaths(
-            string Root,
-            string Manifest,
-            string Src,
-            string Build,
-            string SolutionFile,
-            string ProjectFile);
-
-        private static ProjectPaths InitProjectPaths()
+        private static readonly Lazy<ProjectPaths> _project = new(() =>
         {
             var cwd = Environment.CurrentDirectory;
             var root = string.Empty;
@@ -43,7 +32,7 @@ public static class App
             }
 
             if (string.IsNullOrEmpty(root))
-                throw new FileNotFoundException($"No {ManifestFileName}");
+                throw new FileNotFoundException($"Manifest not found: {ManifestFileName}");
 
             return new(
                 Root: root,
@@ -52,7 +41,17 @@ public static class App
                 Build: Path.Combine(root, "build"),
                 SolutionFile: Path.Combine(root, "build", "app.slnx"),
                 ProjectFile: Path.Combine(root, "build", "app.vcxproj"));
-        }
+
+        });
+        public static ProjectPaths Project => _project.Value;
+
+        public sealed record ProjectPaths(
+            string Root,
+            string Manifest,
+            string Src,
+            string Build,
+            string SolutionFile,
+            string ProjectFile);
     }
 
     public static int Start(string[] args)
