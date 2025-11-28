@@ -55,26 +55,14 @@ public static class App
         {
             var manifestFile = Path.Combine(Environment.CurrentDirectory, Paths.ManifestFileName);
 
-            if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any())
+            if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any() || File.Exists(manifestFile))
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.Error.WriteLine($"Directory is not empty");
                 Console.ResetColor();
                 Console.Error.WriteLine();
 
-                var processInfo = ProcessInfo;
-                processInfo.ArgumentList.Add("--help");
-                await Run(processInfo);
-
-                return 1;
-            }
-
-            if (File.Exists(manifestFile))
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.Error.WriteLine($"{manifestFile} exists");
-                Console.ResetColor();
-                Console.Error.WriteLine();
+                await PrintHelp();
 
                 return 1;
             }
@@ -198,6 +186,13 @@ public static class App
 
             return await Run(new(VisualStudio.VcpkgPath), parseResult.GetValue(VcpkgArguments));
         });
+    }
+
+    public static async Task<int> PrintHelp()
+    {
+        var processInfo = ProcessInfo;
+        processInfo.ArgumentList.Add("--help");
+        return await Run(processInfo);
     }
 
     public static int Start(string[] args)
