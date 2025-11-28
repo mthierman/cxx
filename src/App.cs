@@ -27,19 +27,19 @@ public static class App
     private static Argument<string[]> VcpkgArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
     private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
     {
-        ["devenv"] = new Command("devenv", "Refresh developer environment"),
-        ["vswhere"] = new Command("vswhere") { VSWhereArguments },
-        ["msbuild"] = new Command("msbuild") { MSBuildArguments },
-        ["ninja"] = new Command("ninja") { NinjaArguments },
-        ["vcpkg"] = new Command("vcpkg") { VcpkgArguments },
         ["new"] = new Command("new", "New project"),
         ["install"] = new Command("install", "Install project dependencies"),
         ["generate"] = new Command("generate", "Generate project build"),
         ["build"] = new Command("build", "Build project") { BuildConfiguration },
         ["run"] = new Command("run", "Run project") { BuildConfiguration },
         ["publish"] = new Command("publish", "Publish project"),
-        ["clean"] = new Command("clean", "Clean project"),
         ["format"] = new Command("format", "Format project sources"),
+        ["clean"] = new Command("clean", "Clean project"),
+        ["devenv"] = new Command("devenv", "Refresh developer environment"),
+        ["vswhere"] = new Command("vswhere") { VSWhereArguments },
+        ["msbuild"] = new Command("msbuild") { MSBuildArguments },
+        ["ninja"] = new Command("ninja") { NinjaArguments },
+        ["vcpkg"] = new Command("vcpkg") { VcpkgArguments },
     };
 
     static App()
@@ -48,45 +48,6 @@ public static class App
         {
             RootCommand.Subcommands.Add(command);
         }
-
-        SubCommand["devenv"].SetAction(async parseResult =>
-        {
-            var devEnv = await VisualStudio.DevEnv;
-
-            foreach (var kv in devEnv)
-            {
-                Console.WriteLine($"{kv.Key} = {kv.Value}");
-            }
-        });
-
-        SubCommand["vswhere"].SetAction(async parseResult =>
-        {
-            return await Run(new(VisualStudio.VSWherePath), parseResult.GetValue(VSWhereArguments));
-        });
-
-        SubCommand["msbuild"].SetAction(async parseResult =>
-        {
-            if (VisualStudio.MSBuildPath is null)
-                return 1;
-
-            return await Run(new(VisualStudio.MSBuildPath), parseResult.GetValue(MSBuildArguments));
-        });
-
-        SubCommand["ninja"].SetAction(async parseResult =>
-        {
-            if (VisualStudio.NinjaPath is null)
-                return 1;
-
-            return await Run(new(VisualStudio.NinjaPath), parseResult.GetValue(NinjaArguments));
-        });
-
-        SubCommand["vcpkg"].SetAction(async parseResult =>
-        {
-            if (VisualStudio.VcpkgPath is null)
-                return 1;
-
-            return await Run(new(VisualStudio.VcpkgPath), parseResult.GetValue(VcpkgArguments));
-        });
 
         SubCommand["new"].SetAction(async parseResult =>
         {
@@ -178,16 +139,55 @@ public static class App
             return 0;
         });
 
-        SubCommand["clean"].SetAction(async parseResult =>
-        {
-            return VisualStudio.Clean();
-        });
-
         SubCommand["format"].SetAction(async parseResult =>
         {
             await VisualStudio.FormatAsync();
 
             return 0;
+        });
+
+        SubCommand["clean"].SetAction(async parseResult =>
+        {
+            return VisualStudio.Clean();
+        });
+
+        SubCommand["devenv"].SetAction(async parseResult =>
+        {
+            var devEnv = await VisualStudio.DevEnv;
+
+            foreach (var kv in devEnv)
+            {
+                Console.WriteLine($"{kv.Key} = {kv.Value}");
+            }
+        });
+
+        SubCommand["vswhere"].SetAction(async parseResult =>
+        {
+            return await Run(new(VisualStudio.VSWherePath), parseResult.GetValue(VSWhereArguments));
+        });
+
+        SubCommand["msbuild"].SetAction(async parseResult =>
+        {
+            if (VisualStudio.MSBuildPath is null)
+                return 1;
+
+            return await Run(new(VisualStudio.MSBuildPath), parseResult.GetValue(MSBuildArguments));
+        });
+
+        SubCommand["ninja"].SetAction(async parseResult =>
+        {
+            if (VisualStudio.NinjaPath is null)
+                return 1;
+
+            return await Run(new(VisualStudio.NinjaPath), parseResult.GetValue(NinjaArguments));
+        });
+
+        SubCommand["vcpkg"].SetAction(async parseResult =>
+        {
+            if (VisualStudio.VcpkgPath is null)
+                return 1;
+
+            return await Run(new(VisualStudio.VcpkgPath), parseResult.GetValue(VcpkgArguments));
         });
     }
 
