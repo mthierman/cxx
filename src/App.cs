@@ -162,15 +162,15 @@ public static class App
         {
             var devEnv = await VisualStudio.DevEnv;
 
-            // foreach (var kv in devEnv)
-            // {
-            //     Console.WriteLine($"{kv.Key} = {kv.Value}");
-            // }
+            foreach (var kv in devEnv)
+            {
+                Console.WriteLine($"{kv.Key} = {kv.Value}");
+            }
 
-            // Console.WriteLine();
+            Console.WriteLine();
 
-            // var sdk = await VisualStudio.GetWindowsSdkExecutablePath();
-            // Console.WriteLine(sdk);
+            var sdk = await VisualStudio.GetWindowsSdkExecutablePath();
+            Console.WriteLine(sdk);
         });
 
         SubCommand["vswhere"].SetAction(async parseResult =>
