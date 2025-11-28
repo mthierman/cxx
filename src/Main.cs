@@ -1,1 +1,1 @@
-﻿return cxx.App.Run(args);
+﻿return cxx.App.Start(args);
