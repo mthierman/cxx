@@ -82,6 +82,12 @@ public static class App
 
             SubCommand["generate"].SetAction(async parseResult =>
             {
+                var exitCode = await VisualStudio.Generate();
+                if (exitCode != 0)
+                    return exitCode;
+
+                Print.Err("Generation successful", ConsoleColor.Green);
+
                 return await VisualStudio.Generate();
             });
 
@@ -213,6 +219,18 @@ public static class App
 
     public static class Print
     {
+        public static void Out()
+        {
+            Console.ResetColor();
+            Console.Out.WriteLine();
+        }
+
+        public static void Out(string message)
+        {
+            Console.Out.WriteLine(message);
+            Console.ResetColor();
+        }
+
         public static void Out(string message, ConsoleColor color)
         {
             Console.ForegroundColor = color;
@@ -224,6 +242,12 @@ public static class App
         {
             Console.ResetColor();
             Console.Error.WriteLine();
+        }
+
+        public static void Err(string message)
+        {
+            Console.Error.WriteLine(message);
+            Console.ResetColor();
         }
 
         public static void Err(string message, ConsoleColor color)
