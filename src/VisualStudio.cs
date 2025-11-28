@@ -18,65 +18,49 @@ public static class VisualStudio
     }
 
     private static readonly Lazy<ISetupInstance?> _latestInstance = new(() =>
-    {
-        var setupConfiguration = new SetupConfiguration();
-        var enumInstances = setupConfiguration.EnumAllInstances();
+      {
+          var setupConfiguration = new SetupConfiguration();
+          var enumInstances = setupConfiguration.EnumAllInstances();
+          return enumInstances.EnumerateInstances()
+                              .OrderByDescending(i => i.GetInstallationVersion())
+                              .FirstOrDefault();
+      });
+    public static ISetupInstance? Latest => _latestInstance.Value;
+    public static string? InstallPath => Latest?.GetInstallationPath();
+    public static string VSWherePath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                     "Microsoft Visual Studio", "Installer", "vswhere.exe");
+    public static string? MSBuildPath => CombinePath(InstallPath, "MSBuild", "Current", "Bin", "amd64", "MSBuild.exe");
+    public static string? ClPath => CombinePath(LatestMSVCVersionPath(), "bin", "Hostx64", "x64", "cl.exe");
+    public static string? VcpkgPath => CombinePath(InstallPath, "VC", "vcpkg", "vcpkg.exe");
+    public static string? NinjaPath => CombinePath(InstallPath, "Common7", "IDE", "CommonExtensions", "Microsoft", "CMake", "Ninja", "ninja.exe");
+    public static string? ClangFormatPath => CombinePath(InstallPath, "VC", "Tools", "Llvm", "x64", "bin", "clang-format.exe");
 
-        ISetupInstance? latest = null;
+    public static string? LatestMSVCVersionPath()
+    {
+        if (InstallPath is null) return null;
+
+        var vcRoot = Path.Combine(InstallPath, "VC", "Tools", "MSVC");
+        if (!Directory.Exists(vcRoot)) return null;
+
+        return Directory.GetDirectories(vcRoot)
+                        .OrderByDescending(Path.GetFileName)
+                        .FirstOrDefault();
+    }
+
+    private static string? CombinePath(string? basePath, params string[] parts) =>
+        basePath is null ? null : Path.Combine(new[] { basePath }.Concat(parts).ToArray());
+
+    private static IEnumerable<ISetupInstance> EnumerateInstances(this IEnumSetupInstances enumInstances)
+    {
         ISetupInstance[] buffer = new ISetupInstance[1];
         int fetched;
-
         do
         {
             enumInstances.Next(1, buffer, out fetched);
             if (fetched > 0)
-            {
-                var instance = buffer[0];
-                if (latest == null || string.Compare(instance.GetInstallationVersion(),
-                    latest.GetInstallationVersion(), StringComparison.Ordinal) > 0)
-                {
-                    latest = instance;
-                }
-            }
+                yield return buffer[0];
         } while (fetched > 0);
-
-        return latest;
-    });
-    public static ISetupInstance? Latest => _latestInstance.Value;
-
-    public static string? InstallPath => Latest?.GetInstallationPath();
-    public static string VSWherePath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-        "Microsoft Visual Studio", "Installer", "vswhere.exe");
-    public static string? MSBuildPath => InstallPath is string path
-        ? Path.Combine(path, "MSBuild", "Current", "Bin", "amd64", "MSBuild.exe")
-        : null;
-    public static string? ClPath => LatestMSVCVersionPath() is string path
-        ? Path.Combine(path, "bin", "Hostx64", "x64", "cl.exe")
-        : null;
-    public static string? VcpkgPath => InstallPath is string path
-        ? Path.Combine(path, "VC", "vcpkg", "vcpkg.exe")
-        : null;
-    public static string? NinjaPath => InstallPath is string path
-        ? Path.Combine(path, "Common7", "IDE", "CommonExtensions", "Microsoft", "CMake", "Ninja", "ninja.exe")
-        : null;
-    public static string? ClangFormatPath => InstallPath is string path
-        ? Path.Combine(path, "VC", "Tools", "Llvm", "x64", "bin", "clang-format.exe")
-        : null;
-
-    private static string? LatestMSVCVersionPath()
-    {
-        if (InstallPath is null)
-            return null;
-
-        var vcRoot = Path.Combine(InstallPath, "VC", "Tools", "MSVC");
-
-        if (!Directory.Exists(vcRoot))
-            return null;
-
-        return Directory.GetDirectories(vcRoot)
-            .OrderByDescending(Path.GetFileName)
-            .FirstOrDefault();
     }
 
     public static async Task<int> Build(BuildConfiguration config)
