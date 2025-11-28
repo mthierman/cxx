@@ -69,9 +69,6 @@ public static class App
 
             var sdk = await MSBuild.GetWindowsSdkExecutablePath();
             Console.WriteLine(sdk);
-
-            // await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.MSBuild(), "-version");
-            // return await ExternalCommand.Run(await MSBuild.DevEnvironmentTools.RC(), "-version");
         });
 
         SubCommand["vswhere"].SetAction(async parseResult =>
@@ -81,7 +78,10 @@ public static class App
 
         SubCommand["msbuild"].SetAction(async parseResult =>
         {
-            return await MSBuild.Run(parseResult.GetValue(MSBuildArguments));
+            if (VisualStudio.MSBuildPath is null || !File.Exists(VisualStudio.MSBuildPath))
+                return 1;
+
+            return await ExternalCommand.Run(new(VisualStudio.MSBuildPath), parseResult.GetValue(MSBuildArguments));
         });
 
         SubCommand["ninja"].SetAction(async parseResult =>
