@@ -125,8 +125,8 @@ public static class VisualStudio
 
     public static async Task<int> Build(BuildConfiguration config)
     {
-        var isDebug = config == BuildConfiguration.Debug;
-        Directory.CreateDirectory(App.Paths.Project.Build);
+        if (!Directory.Exists(App.Paths.Project.Build))
+            Directory.CreateDirectory(App.Paths.Project.Build);
 
         if (await Generate() != 0)
             throw new InvalidOperationException("Generation failed");
@@ -137,7 +137,7 @@ public static class VisualStudio
         var exe = App.Exe.MSBuild;
         exe.ArgumentList.Add("-nologo");
         exe.ArgumentList.Add("-v:minimal");
-        exe.ArgumentList.Add($"/p:Configuration={(isDebug ? "Debug" : "Release")}");
+        exe.ArgumentList.Add($"/p:Configuration={(config == BuildConfiguration.Debug ? "Debug" : "Release")}");
         exe.ArgumentList.Add("/p:Platform=x64");
         exe.WorkingDirectory = App.Paths.Project.Build;
         var exitCode = await App.Run(exe); ;
