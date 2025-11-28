@@ -45,11 +45,9 @@ public static class VisualStudio
     public static ISetupInstance? Latest => _latestInstance.Value;
 
     public static string? InstallPath => Latest?.GetInstallationPath();
-
     public static string VSWherePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
         "Microsoft Visual Studio", "Installer", "vswhere.exe");
-
     public static string? MSBuildPath => InstallPath is string path
         ? Path.Combine(path, "MSBuild", "Current", "Bin", "amd64", "MSBuild.exe")
         : null;
