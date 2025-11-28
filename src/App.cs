@@ -12,7 +12,15 @@ public static class App
     public static readonly string Version = Assembly.GetExecutingAssembly()
       .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
       .InformationalVersion ?? "0.0.0";
-    public static ProcessStartInfo ProcessInfo => new() { FileName = FileName };
+
+    public static class Exe
+    {
+        public static ProcessStartInfo CXX => new() { FileName = FileName };
+        public static ProcessStartInfo VSWhere => new() { FileName = VisualStudio.VSWherePath };
+        public static ProcessStartInfo MSBuild => new() { FileName = VisualStudio.MSBuildPath };
+        public static ProcessStartInfo Vcpkg => new() { FileName = VisualStudio.VcpkgPath };
+    }
+
     public static VisualStudio.BuildConfiguration DefaultBuildConfiguration = VisualStudio.BuildConfiguration.Debug;
 
     public static class Config
@@ -190,7 +198,7 @@ public static class App
 
     public static async Task<int> PrintHelp()
     {
-        var processInfo = ProcessInfo;
+        var processInfo = Exe.CXX;
         processInfo.ArgumentList.Add("--help");
         return await Run(processInfo);
     }
