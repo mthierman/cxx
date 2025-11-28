@@ -110,6 +110,20 @@ public static class App
 
             SubCommand["publish"].SetAction(async parseResult =>
             {
+                if (!Directory.Exists(Paths.Project.Publish))
+                    Directory.CreateDirectory(Paths.Project.Publish);
+
+                var build = await VisualStudio.Build(BuildConfiguration.Release);
+
+                var destination = Path.Combine(Paths.Project.Publish, FileName);
+
+                if (File.Exists(destination))
+                    File.Delete(destination);
+
+                File.Copy(Exe.Release.FileName, destination);
+
+                Print.Err($"File ({FileName}) copied: {destination}", ConsoleColor.Green);
+
                 return 0;
             });
 
@@ -319,6 +333,9 @@ public static class App
                 Manifest: Path.Combine(root, ManifestFileName),
                 Src: Path.Combine(root, "src"),
                 Build: Path.Combine(root, "build"),
+                Debug: Path.Combine(root, "build", "debug"),
+                Release: Path.Combine(root, "build", "release"),
+                Publish: Path.Combine(root, "build", "publish"),
                 SolutionFile: Path.Combine(root, "build", "app.slnx"),
                 ProjectFile: Path.Combine(root, "build", "app.vcxproj"));
         });
@@ -328,6 +345,9 @@ public static class App
             string Manifest,
             string Src,
             string Build,
+            string Debug,
+            string Release,
+            string Publish,
             string SolutionFile,
             string ProjectFile);
     }
