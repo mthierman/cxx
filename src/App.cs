@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Diagnostics;
 using System.Reflection;
+using System.Text.Json;
 
 namespace CXX;
 
@@ -9,6 +10,14 @@ public static class App
     public static string Version { get; } = Assembly.GetExecutingAssembly()
               .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
               .InformationalVersion ?? "0.0.0";
+
+    // public static VisualStudio.BuildConfiguration BuildConfiguration = VisualStudio.BuildConfiguration.Debug;
+
+    public static class Config
+    {
+        public static string name = "cxx-project";
+        public static string version = "0.0.0";
+    }
 
     private static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {Version}");
     private static Argument<VisualStudio.BuildConfiguration> BuildConfiguration = new("BuildConfiguration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
@@ -81,13 +90,13 @@ public static class App
 
         SubCommand["new"].SetAction(async parseResult =>
         {
+            var manifestFile = Path.Combine(Environment.CurrentDirectory, Paths.ManifestFileName);
+
             if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any())
             {
                 Console.ForegroundColor = ConsoleColor.Red;
 
                 Console.Error.WriteLine($"Directory is not empty. {Paths.ManifestFileName}:");
-
-                var manifestFile = Path.Combine(Environment.CurrentDirectory, Paths.ManifestFileName);
 
                 if (File.Exists(manifestFile))
                 {
@@ -100,7 +109,14 @@ public static class App
                 return 1;
             }
 
-            await File.WriteAllTextAsync(Path.Combine(Environment.CurrentDirectory, Paths.ManifestFileName), "{}");
+            await File.WriteAllTextAsync(manifestFile, JsonSerializer.Serialize(new
+            {
+                Config.name,
+                Config.version
+            }, new JsonSerializerOptions
+            {
+                WriteIndented = true // makes the JSON pretty-printed
+            }));
 
             var startInfo = new ProcessStartInfo
             {
