@@ -15,13 +15,21 @@ public static class App
         return RootCommand.Parse(args).Invoke();
     }
 
-    public static async Task<int> Run(ProcessStartInfo processStartInfo, params string[] arguments)
+    public static async Task<int> Run(ProcessStartInfo processStartInfo, params string[]? arguments)
     {
-        foreach (var argument in arguments)
+        if (processStartInfo.FileName is null || !File.Exists(processStartInfo.FileName))
+            return 1;
+
+        processStartInfo.UseShellExecute = false;
+        processStartInfo.RedirectStandardOutput = false;
+        processStartInfo.RedirectStandardError = false;
+        processStartInfo.CreateNoWindow = false;
+
+        foreach (var argument in arguments ?? Array.Empty<string>())
             processStartInfo.ArgumentList.Add(argument);
 
         using var process = Process.Start(processStartInfo)
-                      ?? throw new InvalidOperationException("Failed to start process.");
+                      ?? throw new InvalidOperationException($"Failed to start process: {processStartInfo.FileName}.");
 
         await process.WaitForExitAsync();
 
@@ -88,42 +96,31 @@ public static class App
 
         SubCommand["vswhere"].SetAction(async parseResult =>
         {
-            var command = VisualStudio.VSWherePath;
-
-            if (command is null || !File.Exists(command))
-                return 1;
-
-            return await Run(new(command), parseResult.GetValue(VSWhereArguments) ?? Array.Empty<string>());
+            return await Run(new(VisualStudio.VSWherePath), parseResult.GetValue(VSWhereArguments));
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
         {
-            var command = VisualStudio.MSBuildPath;
-
-            if (command is null || !File.Exists(command))
+            if (VisualStudio.MSBuildPath is null)
                 return 1;
 
-            return await Run(new(command), parseResult.GetValue(MSBuildArguments) ?? Array.Empty<string>());
+            return await Run(new(VisualStudio.MSBuildPath), parseResult.GetValue(MSBuildArguments));
         });
 
         SubCommand["ninja"].SetAction(async parseResult =>
         {
-            var command = VisualStudio.NinjaPath;
-
-            if (command is null || !File.Exists(command))
+            if (VisualStudio.NinjaPath is null)
                 return 1;
 
-            return await Run(new(command), parseResult.GetValue(NinjaArguments) ?? Array.Empty<string>());
+            return await Run(new(VisualStudio.NinjaPath), parseResult.GetValue(NinjaArguments));
         });
 
         SubCommand["vcpkg"].SetAction(async parseResult =>
         {
-            var command = VisualStudio.VcpkgPath;
-
-            if (command is null || !File.Exists(command))
+            if (VisualStudio.VcpkgPath is null)
                 return 1;
 
-            return await Run(new(command), parseResult.GetValue(VcpkgArguments) ?? Array.Empty<string>());
+            return await Run(new(VisualStudio.VcpkgPath), parseResult.GetValue(VcpkgArguments));
         });
 
         SubCommand["new"].SetAction(async parseResult =>
