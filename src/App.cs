@@ -18,7 +18,7 @@ public static class App
     public static class Config
     {
         public static string name = $"{Name}-project";
-        public static string version = $"{Version}";
+        public static string version = "0.0.0";
     }
 
     private static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {Version}");
