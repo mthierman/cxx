@@ -11,12 +11,6 @@ namespace CXX;
 
 public static class VisualStudio
 {
-    public enum BuildConfiguration
-    {
-        Debug,
-        Release
-    }
-
     private static readonly SemaphoreSlim ConsoleLock = new SemaphoreSlim(1, 1);
 
     public static Task<Dictionary<string, string>> DevEnv => _lazyEnv.Value;
@@ -123,7 +117,7 @@ public static class VisualStudio
         } while (fetched > 0);
     }
 
-    public static async Task<int> Build(BuildConfiguration config)
+    public static async Task<int> Build(App.BuildConfiguration config)
     {
         if (!Directory.Exists(App.Paths.Project.Build))
             Directory.CreateDirectory(App.Paths.Project.Build);
@@ -137,7 +131,7 @@ public static class VisualStudio
         var exe = App.Exe.MSBuild;
         exe.ArgumentList.Add("-nologo");
         exe.ArgumentList.Add("-v:minimal");
-        exe.ArgumentList.Add($"/p:Configuration={(config == BuildConfiguration.Debug ? "Debug" : "Release")}");
+        exe.ArgumentList.Add($"/p:Configuration={(config == App.BuildConfiguration.Debug ? "Debug" : "Release")}");
         exe.ArgumentList.Add("/p:Platform=x64");
         exe.WorkingDirectory = App.Paths.Project.Build;
         var exitCode = await App.Run(exe); ;

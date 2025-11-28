@@ -13,8 +13,16 @@ public static class App
       .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
       .InformationalVersion ?? "0.0.0";
 
+    public enum BuildConfiguration
+    {
+        Debug,
+        Release
+    }
+
     public static class Exe
     {
+        public static ProcessStartInfo Debug => new() { FileName = Path.Combine(Paths.Project.Build, "debug", "app.exe") };
+        public static ProcessStartInfo Release => new() { FileName = Path.Combine(Paths.Project.Build, "release", "app.exe") };
         public static ProcessStartInfo CXX => new() { FileName = Environment.ProcessPath };
         public static ProcessStartInfo VSWhere => new() { FileName = VisualStudio.VSWherePath };
         public static ProcessStartInfo MSBuild => new() { FileName = VisualStudio.MSBuildPath };
@@ -24,128 +32,132 @@ public static class App
         public static ProcessStartInfo ClangFormat => new() { FileName = VisualStudio.ClangFormatPath };
     }
 
-    public static VisualStudio.BuildConfiguration DefaultBuildConfiguration = VisualStudio.BuildConfiguration.Debug;
-
     public static class Config
     {
         public static string name = $"{Name}-project";
         public static string version = "0.0.0";
     }
 
-    private static RootCommand RootCommand { get; } = new RootCommand($"C++ build tool\nversion {Version}");
-    private static Argument<VisualStudio.BuildConfiguration> BuildConfiguration = new("BuildConfiguration") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
-    private static Argument<string[]> VSWhereArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
-    private static Argument<string[]> MSBuildArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
-    private static Argument<string[]> NinjaArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
-    private static Argument<string[]> VcpkgArguments = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
-    private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
+    public static class Root
     {
-        ["new"] = new Command("new", "New project"),
-        ["install"] = new Command("install", "Install project dependencies"),
-        ["generate"] = new Command("generate", "Generate project build"),
-        ["build"] = new Command("build", "Build project") { BuildConfiguration },
-        ["run"] = new Command("run", "Run project") { BuildConfiguration },
-        ["publish"] = new Command("publish", "Publish project"),
-        ["format"] = new Command("format", "Format project sources"),
-        ["clean"] = new Command("clean", "Clean project"),
-        ["devenv"] = new Command("devenv", "Refresh developer environment"),
-        ["vswhere"] = new Command("vswhere") { VSWhereArguments },
-        ["msbuild"] = new Command("msbuild") { MSBuildArguments },
-        ["ninja"] = new Command("ninja") { NinjaArguments },
-        ["vcpkg"] = new Command("vcpkg") { VcpkgArguments },
-    };
-
-    static App()
-    {
-        foreach (var command in SubCommand.Values)
+        public static RootCommand Command = new($"C++ build tool\nversion {Version}");
+        private static Argument<BuildConfiguration> Config = new("Config") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
+        private static Argument<string[]> VSWhereArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
+        private static Argument<string[]> MSBuildArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
+        private static Argument<string[]> NinjaArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
+        private static Argument<string[]> VcpkgArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
+        private static Dictionary<string, Command> SubCommand = new Dictionary<string, Command>
         {
-            RootCommand.Subcommands.Add(command);
-        }
+            ["new"] = new Command("new", "New project"),
+            ["install"] = new Command("install", "Install project dependencies"),
+            ["generate"] = new Command("generate", "Generate project build"),
+            ["build"] = new Command("build", "Build project") { Config },
+            ["run"] = new Command("run", "Run project") { Config },
+            ["publish"] = new Command("publish", "Publish project"),
+            ["format"] = new Command("format", "Format project sources"),
+            ["clean"] = new Command("clean", "Clean project"),
+            ["devenv"] = new Command("devenv", "Refresh developer environment"),
+            ["vswhere"] = new Command("vswhere") { VSWhereArgs },
+            ["msbuild"] = new Command("msbuild") { MSBuildArgs },
+            ["ninja"] = new Command("ninja") { NinjaArgs },
+            ["vcpkg"] = new Command("vcpkg") { VcpkgArgs },
+        };
 
-        SubCommand["new"].SetAction(async parseResult =>
+        static Root()
         {
-            return await NewProject();
-        });
-
-        SubCommand["install"].SetAction(async parseResult =>
-        {
-            return await InstallVcpkg();
-        });
-
-        SubCommand["generate"].SetAction(async parseResult =>
-        {
-            return await VisualStudio.Generate();
-        });
-
-        SubCommand["build"].SetAction(async parseResult =>
-        {
-            return await VisualStudio.Build(parseResult.GetValue(BuildConfiguration));
-        });
-
-        SubCommand["run"].SetAction(async parseResult =>
-        {
-            await VisualStudio.Build(parseResult.GetValue(BuildConfiguration));
-
-            Process.Start(new ProcessStartInfo(Path.Combine(Paths.Project.Build, parseResult.GetValue(BuildConfiguration) == VisualStudio.BuildConfiguration.Debug ? "debug" : "release", "app.exe")))?.WaitForExit();
-
-            return 0;
-        });
-
-        SubCommand["publish"].SetAction(async parseResult =>
-        {
-            return 0;
-        });
-
-        SubCommand["format"].SetAction(async parseResult =>
-        {
-            await VisualStudio.FormatAsync();
-
-            return 0;
-        });
-
-        SubCommand["clean"].SetAction(async parseResult =>
-        {
-            return VisualStudio.Clean();
-        });
-
-        SubCommand["devenv"].SetAction(async parseResult =>
-        {
-            var devEnv = await VisualStudio.DevEnv;
-
-            foreach (var kv in devEnv)
+            foreach (var command in SubCommand.Values)
             {
-                Console.WriteLine($"{kv.Key} = {kv.Value}");
+                Command.Subcommands.Add(command);
             }
-        });
 
-        SubCommand["vswhere"].SetAction(async parseResult =>
-        {
-            return await Run(new(VisualStudio.VSWherePath), parseResult.GetValue(VSWhereArguments));
-        });
+            SubCommand["new"].SetAction(async parseResult =>
+            {
+                return await NewProject();
+            });
 
-        SubCommand["msbuild"].SetAction(async parseResult =>
-        {
-            if (VisualStudio.MSBuildPath is null)
-                return 1;
+            SubCommand["install"].SetAction(async parseResult =>
+            {
+                return await InstallVcpkg();
+            });
 
-            return await Run(new(VisualStudio.MSBuildPath), parseResult.GetValue(MSBuildArguments));
-        });
+            SubCommand["generate"].SetAction(async parseResult =>
+            {
+                return await VisualStudio.Generate();
+            });
 
-        SubCommand["ninja"].SetAction(async parseResult =>
-        {
-            if (VisualStudio.NinjaPath is null)
-                return 1;
+            SubCommand["build"].SetAction(async parseResult =>
+            {
+                return await VisualStudio.Build(parseResult.GetValue(Config));
+            });
 
-            return await Run(new(VisualStudio.NinjaPath), parseResult.GetValue(NinjaArguments));
-        });
+            SubCommand["run"].SetAction(async parseResult =>
+            {
+                var build = await VisualStudio.Build(parseResult.GetValue(Config));
 
-        SubCommand["vcpkg"].SetAction(async parseResult =>
-        {
-            if (VisualStudio.VcpkgPath is null)
-                return 1;
+                if (build != 0)
+                    return build;
 
-            return await Run(new(VisualStudio.VcpkgPath), parseResult.GetValue(VcpkgArguments));
-        });
+                Process.Start(new ProcessStartInfo(Path.Combine(Paths.Project.Build, parseResult.GetValue(Config) == BuildConfiguration.Debug ? "debug" : "release", "app.exe")))?.WaitForExit();
+
+                return 0;
+            });
+
+            SubCommand["publish"].SetAction(async parseResult =>
+            {
+                return 0;
+            });
+
+            SubCommand["format"].SetAction(async parseResult =>
+            {
+                await VisualStudio.FormatAsync();
+
+                return 0;
+            });
+
+            SubCommand["clean"].SetAction(async parseResult =>
+            {
+                return VisualStudio.Clean();
+            });
+
+            SubCommand["devenv"].SetAction(async parseResult =>
+            {
+                var devEnv = await VisualStudio.DevEnv;
+
+                foreach (var kv in devEnv)
+                {
+                    Console.WriteLine($"{kv.Key} = {kv.Value}");
+                }
+            });
+
+            SubCommand["vswhere"].SetAction(async parseResult =>
+            {
+                return await Run(new(VisualStudio.VSWherePath), parseResult.GetValue(VSWhereArgs));
+            });
+
+            SubCommand["msbuild"].SetAction(async parseResult =>
+            {
+                if (VisualStudio.MSBuildPath is null)
+                    return 1;
+
+                return await Run(new(VisualStudio.MSBuildPath), parseResult.GetValue(MSBuildArgs));
+            });
+
+            SubCommand["ninja"].SetAction(async parseResult =>
+            {
+                if (VisualStudio.NinjaPath is null)
+                    return 1;
+
+                return await Run(new(VisualStudio.NinjaPath), parseResult.GetValue(NinjaArgs));
+            });
+
+            SubCommand["vcpkg"].SetAction(async parseResult =>
+            {
+                if (VisualStudio.VcpkgPath is null)
+                    return 1;
+
+                return await Run(new(VisualStudio.VcpkgPath), parseResult.GetValue(VcpkgArgs));
+            });
+        }
     }
 
     public static async Task<int> NewProject()
@@ -154,11 +166,11 @@ public static class App
 
         if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any() || File.Exists(manifestFile))
         {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Error.WriteLine($"Directory is not empty");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"Directory was not empty.");
             Console.ResetColor();
             Console.Error.WriteLine();
-            await RootCommand.Parse("--help").InvokeAsync();
+            await Root.Command.Parse("--help").InvokeAsync();
 
             return 1;
         }
@@ -192,7 +204,7 @@ public static class App
 
     public static async Task<int> PrintHelp()
     {
-        return await RootCommand.Parse("--help").InvokeAsync();
+        return await Root.Command.Parse("--help").InvokeAsync();
     }
 
     public static async Task<int> InstallVcpkg()
@@ -205,7 +217,7 @@ public static class App
 
     public static int Start(string[] args)
     {
-        return RootCommand.Parse(args).Invoke();
+        return Root.Command.Parse(args).Invoke();
     }
 
     public static async Task<int> Run(ProcessStartInfo processStartInfo, params string[]? arguments)
