@@ -9,7 +9,7 @@ public static class VSWhere
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = Project.Tools.VSWhere,
+            FileName = VisualStudio.VSWherePath,
             UseShellExecute = false,
             RedirectStandardOutput = false,
             RedirectStandardError = false,

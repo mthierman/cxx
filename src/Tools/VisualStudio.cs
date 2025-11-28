@@ -10,7 +10,7 @@ public static class VisualStudio
     /// <summary>The installation path of the latest Visual Studio instance, or null if none installed.</summary>
     public static string? InstallPath => Latest?.GetInstallationPath();
 
-    /// <summary>The MSBuild path of the latest Visual Studio instance (64-bit).</summary>
+    /// <summary>The vswhere path of the latest Visual Studio instance (64-bit).</summary>
     public static string? VSWherePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
         "Microsoft Visual Studio", "Installer", "vswhere.exe");
@@ -18,6 +18,11 @@ public static class VisualStudio
     /// <summary>The MSBuild path of the latest Visual Studio instance (64-bit).</summary>
     public static string? MSBuildPath => InstallPath is string path
         ? Path.Combine(path, "MSBuild", "Current", "Bin", "amd64", "MSBuild.exe")
+        : null;
+
+    /// <summary>The ninja path of the latest Visual Studio instance (64-bit).</summary>
+    public static string? NinjaPath => InstallPath is string path
+        ? Path.Combine(path, "Common7", "IDE", "CommonExtensions", "Microsoft", "CMake", "Ninja", "ninja.exe")
         : null;
 
     /// <summary>The vcpkg path of the latest Visual Studio instance (64-bit).</summary>
