@@ -18,6 +18,7 @@ public static class App
         public static readonly string AppLocal = Path.Combine(Local, "cxx");
         public static readonly string AppRoaming = Path.Combine(Roaming, "cxx");
 
+        public static ProjectPaths Project => _project.Value;
         private static readonly Lazy<ProjectPaths> _project = new(() =>
         {
             var cwd = Environment.CurrentDirectory;
@@ -41,9 +42,7 @@ public static class App
                 Build: Path.Combine(root, "build"),
                 SolutionFile: Path.Combine(root, "build", "app.slnx"),
                 ProjectFile: Path.Combine(root, "build", "app.vcxproj"));
-
         });
-        public static ProjectPaths Project => _project.Value;
 
         public sealed record ProjectPaths(
             string Root,
@@ -91,20 +90,7 @@ public static class App
             return 1;
         }
 
-        var cwd = Environment.CurrentDirectory;
-        var vcpkgManifest = Path.Combine(cwd, "vcpkg.json");
-        var vcpkgConfig = Path.Combine(cwd, "vcpkg-configuration.json");
-
-        if (File.Exists(Path.Combine(cwd, ManifestFileName)) || File.Exists(vcpkgManifest) || File.Exists(vcpkgConfig))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Error.WriteLine("Project already has a manifest file");
-            Console.ResetColor();
-
-            return 1;
-        }
-
-        await File.WriteAllTextAsync(Path.Combine(cwd, ManifestFileName), "{}");
+        await File.WriteAllTextAsync(Path.Combine(Environment.CurrentDirectory, ManifestFileName), "{}");
 
         var startInfo = new ProcessStartInfo
         {
@@ -116,23 +102,17 @@ public static class App
 
         await Run(startInfo, "new", "--application");
 
-        if (!Directory.Exists(Paths.Project.Src))
-            Directory.CreateDirectory(Paths.Project.Src);
+        Directory.CreateDirectory(Paths.Project.Src);
 
-        var app_cpp = Path.Combine(Paths.Project.Src, "app.cpp");
+        await File.WriteAllTextAsync(Path.Combine(Paths.Project.Src, "app.cpp"), @"
+            #include <print>
 
-        if (!File.Exists(app_cpp))
-        {
-            await File.WriteAllTextAsync(app_cpp, @"
-        #include <print>
+            auto wmain() -> int {
+                std::println(""Hello, World!"");
 
-        auto wmain() -> int {
-            std::println(""Hello, World!"");
-
-            return 0;
-        }
+                return 0;
+            }
         ".Trim());
-        }
 
         return 0;
     }
