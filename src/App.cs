@@ -10,9 +10,22 @@ public static class App
               .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
               .InformationalVersion ?? "0.0.0";
 
-    public static int Run(string[] args)
+    public static int Start(string[] args)
     {
         return RootCommand.Parse(args).Invoke();
+    }
+
+    public static async Task<int> Run(ProcessStartInfo processStartInfo, params string[] arguments)
+    {
+        foreach (var argument in arguments)
+            processStartInfo.ArgumentList.Add(argument);
+
+        using var process = Process.Start(processStartInfo)
+                      ?? throw new InvalidOperationException("Failed to start process.");
+
+        await process.WaitForExitAsync();
+
+        return process.ExitCode;
     }
 
     private static readonly SemaphoreSlim ConsoleLock = new SemaphoreSlim(1, 1);
@@ -80,7 +93,7 @@ public static class App
             if (command is null || !File.Exists(command))
                 return 1;
 
-            return await ExternalCommand.Run(new(command), parseResult.GetValue(VSWhereArguments) ?? Array.Empty<string>());
+            return await Run(new(command), parseResult.GetValue(VSWhereArguments) ?? Array.Empty<string>());
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
@@ -90,7 +103,7 @@ public static class App
             if (command is null || !File.Exists(command))
                 return 1;
 
-            return await ExternalCommand.Run(new(command), parseResult.GetValue(MSBuildArguments) ?? Array.Empty<string>());
+            return await Run(new(command), parseResult.GetValue(MSBuildArguments) ?? Array.Empty<string>());
         });
 
         SubCommand["ninja"].SetAction(async parseResult =>
@@ -100,7 +113,7 @@ public static class App
             if (command is null || !File.Exists(command))
                 return 1;
 
-            return await ExternalCommand.Run(new(command), parseResult.GetValue(NinjaArguments) ?? Array.Empty<string>());
+            return await Run(new(command), parseResult.GetValue(NinjaArguments) ?? Array.Empty<string>());
         });
 
         SubCommand["vcpkg"].SetAction(async parseResult =>
@@ -110,7 +123,7 @@ public static class App
             if (command is null || !File.Exists(command))
                 return 1;
 
-            return await ExternalCommand.Run(new(command), parseResult.GetValue(VcpkgArguments) ?? Array.Empty<string>());
+            return await Run(new(command), parseResult.GetValue(VcpkgArguments) ?? Array.Empty<string>());
         });
 
         SubCommand["new"].SetAction(async parseResult =>
@@ -120,7 +133,7 @@ public static class App
 
         SubCommand["install"].SetAction(async parseResult =>
         {
-            return await ExternalCommand.RunVcpkg("install");
+            return await VisualStudio.RunVcpkg("install");
         });
 
         SubCommand["generate"].SetAction(async parseResult =>
