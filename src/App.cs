@@ -124,7 +124,7 @@ public static class App
         var vcpkgManifest = Path.Combine(cwd, "vcpkg.json");
         var vcpkgConfig = Path.Combine(cwd, "vcpkg-configuration.json");
 
-        if (File.Exists(App.Paths.Core.Manifest) || File.Exists(vcpkgManifest) || File.Exists(vcpkgConfig))
+        if (File.Exists(Path.Combine(cwd, Paths.Manifest.FileName)) || File.Exists(vcpkgManifest) || File.Exists(vcpkgConfig))
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.Error.WriteLine("Project already has a manifest file");
@@ -133,7 +133,7 @@ public static class App
             return 1;
         }
 
-        await File.WriteAllTextAsync(Path.Combine(cwd, App.Paths.Manifest.FileName), "{}");
+        await File.WriteAllTextAsync(Path.Combine(cwd, Paths.Manifest.FileName), "{}");
 
         var startInfo = new ProcessStartInfo
         {
@@ -153,14 +153,14 @@ public static class App
         if (!File.Exists(app_cpp))
         {
             await File.WriteAllTextAsync(app_cpp, @"
-#include <print>
+        #include <print>
 
-auto wmain() -> int {
-    std::println(""Hello, World!"");
+        auto wmain() -> int {
+            std::println(""Hello, World!"");
 
-    return 0;
-}
-".Trim());
+            return 0;
+        }
+        ".Trim());
         }
 
         return 0;
