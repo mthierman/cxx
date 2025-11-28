@@ -12,11 +12,14 @@ public static class App
         return Commands.Root.Parse(args).Invoke();
     }
 
-    public static readonly string Name = "cxx";
-    public static readonly string FileName = $"{Name}.exe";
-    public static readonly string Version = Assembly.GetExecutingAssembly()
-      .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
-      .InformationalVersion ?? "0.0.0";
+    public static class MetaData
+    {
+        public static readonly string Name = "cxx";
+        public static readonly string FileName = $"{Name}.exe";
+        public static readonly string Version = Assembly.GetExecutingAssembly()
+          .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+          .InformationalVersion ?? "0.0.0";
+    }
 
     public enum BuildConfiguration
     {
@@ -39,13 +42,13 @@ public static class App
 
     public static class Config
     {
-        public static string name = $"{Name}-project";
+        public static string name = $"{MetaData.Name}-project";
         public static string version = "0.0.0";
     }
 
     public static class Commands
     {
-        public static RootCommand Root = new($"C++ build tool\nversion {Version}");
+        public static RootCommand Root = new($"C++ build tool\nversion {MetaData.Version}");
         private static Argument<BuildConfiguration> Config = new("Config") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
         private static Argument<string[]> VSWhereArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> MSBuildArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
@@ -117,14 +120,14 @@ public static class App
 
                 var build = await VisualStudio.Build(BuildConfiguration.Release);
 
-                var destination = Path.Combine(Paths.Project.Publish, FileName);
+                var destination = Path.Combine(Paths.Project.Publish, MetaData.FileName);
 
                 if (File.Exists(destination))
                     File.Delete(destination);
 
                 File.Copy(Exe.Release.FileName, destination);
 
-                Print.Err($"File ({FileName}) copied: {destination}", ConsoleColor.Green);
+                Print.Err($"File ({MetaData.FileName}) copied: {destination}", ConsoleColor.Green);
 
                 return 0;
             });
@@ -203,7 +206,7 @@ public static class App
             WriteIndented = true
         });
 
-        Print.Err($"Generated new {Name} project", ConsoleColor.Green);
+        Print.Err($"Generated new {MetaData.Name} project", ConsoleColor.Green);
         Console.Error.WriteLine();
         Print.Err(json, ConsoleColor.DarkGreen);
 
