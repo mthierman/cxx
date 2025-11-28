@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.Setup.Configuration;
 
 public static class VisualStudio
 {
+    private static readonly SetupConfiguration setupConfiguration = new SetupConfiguration();
     private static readonly Lazy<ISetupInstance?> _latest = new(GetLatestInstance);
 
     /// <summary>The latest installed Visual Studio instance (any edition, including Build Tools).</summary>
@@ -11,7 +12,7 @@ public static class VisualStudio
     public static string? InstallPath => Latest?.GetInstallationPath();
 
     /// <summary>The vswhere path of the latest Visual Studio instance (64-bit).</summary>
-    public static string? VSWherePath => Path.Combine(
+    public static string VSWherePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
         "Microsoft Visual Studio", "Installer", "vswhere.exe");
 
@@ -51,8 +52,7 @@ public static class VisualStudio
     /// <summary>Finds the latest installed Visual Studio instance.</summary>
     private static ISetupInstance? GetLatestInstance()
     {
-        var setupConfig = new SetupConfiguration();
-        var enumInstances = setupConfig.EnumAllInstances();
+        var enumInstances = setupConfiguration.EnumAllInstances();
 
         ISetupInstance? latest = null;
         ISetupInstance[] buffer = new ISetupInstance[1];
@@ -73,38 +73,5 @@ public static class VisualStudio
         } while (fetched > 0);
 
         return latest;
-    }
-
-    public static async Task<int> PrintInstances()
-    {
-        var setupConfig = new SetupConfiguration();
-        var enumInstances = setupConfig.EnumAllInstances(); // returns IEnumSetupInstances
-
-        ISetupInstance[] instances = new ISetupInstance[1];
-        int fetched = 0;
-
-        ISetupInstance? latestInstance = null;
-
-        // Loop until Next returns 0 items
-        do
-        {
-            enumInstances.Next(1, instances, out fetched); // returns void, fetched tells how many items
-            if (fetched == 0) break;
-
-            var instance = instances[0];
-            if (latestInstance == null ||
-                string.Compare(instance.GetInstallationVersion(), latestInstance.GetInstallationVersion(), StringComparison.Ordinal) > 0)
-            {
-                latestInstance = instance;
-            }
-
-        } while (fetched > 0);
-
-        if (latestInstance != null)
-        {
-            Console.WriteLine($"Latest VS install path: {latestInstance.GetInstallationPath()}");
-        }
-
-        return 0;
     }
 }

@@ -76,9 +76,7 @@ public static class App
 
         SubCommand["vswhere"].SetAction(async parseResult =>
         {
-            // return await VSWhere.Run(parseResult.GetValue(VSWhereArguments));
-            // return await VSWhere.Print();
-            return await VisualStudio.PrintInstances();
+            return await ExternalCommand.Run(new(VisualStudio.VSWherePath), parseResult.GetValue(VSWhereArguments));
         });
 
         SubCommand["msbuild"].SetAction(async parseResult =>
