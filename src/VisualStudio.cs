@@ -72,13 +72,13 @@ public static class VisualStudio
         });
 
     private static readonly Lazy<ISetupInstance?> _latestInstance = new(() =>
-      {
-          var setupConfiguration = new SetupConfiguration();
-          var enumInstances = setupConfiguration.EnumAllInstances();
-          return enumInstances.EnumerateInstances()
-                              .OrderByDescending(i => i.GetInstallationVersion())
-                              .FirstOrDefault();
-      });
+    {
+        var setupConfiguration = new SetupConfiguration();
+        var enumInstances = setupConfiguration.EnumAllInstances();
+        return enumInstances.EnumerateInstances()
+                            .OrderByDescending(i => i.GetInstallationVersion())
+                            .FirstOrDefault();
+    });
     public static ISetupInstance? Latest => _latestInstance.Value;
     public static string? InstallPath => Latest?.GetInstallationPath();
     public static string VSWherePath =>
