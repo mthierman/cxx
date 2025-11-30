@@ -326,7 +326,7 @@ public static class App
         foreach (var argument in arguments ?? Array.Empty<string>())
             processStartInfo.ArgumentList.Add(argument);
 
-        Console.Out.WriteLine($"{processStartInfo.FileName}");
+        Console.Error.WriteLine($"{processStartInfo.FileName}");
 
         using var process = Process.Start(processStartInfo)
                       ?? throw new InvalidOperationException($"Failed to start process: {processStartInfo.FileName}.");
