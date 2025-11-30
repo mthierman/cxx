@@ -111,7 +111,7 @@ public static class VisualStudio
     public static string? NinjaPath => CombinePath(InstallPath, "Common7", "IDE", "CommonExtensions", "Microsoft", "CMake", "Ninja", "ninja.exe");
     public static string? ClangFormatPath => CombinePath(InstallPath, "VC", "Tools", "Llvm", "x64", "bin", "clang-format.exe");
 
-    public static string? GetVcpkgExe()
+    private static string? GetVcpkgExe()
     {
         var root = Environment.GetEnvironmentVariable("VCPKG_ROOT");
 
