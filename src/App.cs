@@ -41,6 +41,7 @@ public static class App
         public static ProcessStartInfo VSWhere => new() { FileName = VisualStudio.VSWherePath };
         public static ProcessStartInfo MSBuild => new() { FileName = VisualStudio.MSBuildPath };
         public static ProcessStartInfo CL => new() { FileName = VisualStudio.ClPath };
+        public static ProcessStartInfo RC => new() { FileName = VisualStudio.RcPath };
         public static ProcessStartInfo Vcpkg => new() { FileName = VisualStudio.VcpkgPath };
         public static ProcessStartInfo Ninja => new() { FileName = VisualStudio.NinjaPath };
         public static ProcessStartInfo ClangFormat => new() { FileName = VisualStudio.ClangFormatPath };
@@ -52,6 +53,7 @@ public static class App
         private static Argument<BuildConfiguration> Config = new("Config") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
         private static Argument<string[]> VSWhereArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> MSBuildArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
+        private static Argument<string[]> RCArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> NinjaArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> NugetArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> VcpkgArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
@@ -68,6 +70,7 @@ public static class App
             ["devenv"] = new Command("devenv", "Refresh developer environment"),
             ["vswhere"] = new Command("vswhere") { VSWhereArgs },
             ["msbuild"] = new Command("msbuild") { MSBuildArgs },
+            ["rc"] = new Command("rc") { RCArgs },
             ["ninja"] = new Command("ninja") { NinjaArgs },
             ["nuget"] = new Command("nuget") { NugetArgs },
             ["vcpkg"] = new Command("vcpkg") { VcpkgArgs },
@@ -167,6 +170,14 @@ public static class App
                     return 1;
 
                 return await Run(new(VisualStudio.MSBuildPath), parseResult.GetValue(MSBuildArgs));
+            });
+
+            SubCommand["rc"].SetAction(async parseResult =>
+            {
+                if (VisualStudio.RcPath is null)
+                    return 1;
+
+                return await Run(new(VisualStudio.RcPath), parseResult.GetValue(MSBuildArgs));
             });
 
             SubCommand["ninja"].SetAction(async parseResult =>

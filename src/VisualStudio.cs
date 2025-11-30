@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Text.Json;
 using Microsoft.Build.Construction;
 using Microsoft.VisualStudio.Setup.Configuration;
 using Microsoft.VisualStudio.SolutionPersistence.Model;
@@ -107,10 +106,41 @@ public static class VisualStudio
                      "Microsoft Visual Studio", "Installer", "vswhere.exe");
     public static string? MSBuildPath => CombinePath(InstallPath, "MSBuild", "Current", "Bin", "amd64", "MSBuild.exe");
     public static string? ClPath => CombinePath(LatestMSVCVersionPath(), "bin", "Hostx64", "x64", "cl.exe");
+    public static string? RcPath => CombinePath(GetLatestWindowsSdkBin(), "rc.exe");
     public static string? VcpkgPath => GetVcpkgExe();
     public static string? NinjaPath => GetNinjaExe();
     public static string? NugetPath => GetNugetExe();
-    public static string? ClangFormatPath => CombinePath(InstallPath, "VC", "Tools", "Llvm", "x64", "bin", "clang-format.exe");
+    public static string? ClangFormatPath => GetClangFormatExe();
+
+    private static string? GetClExe()
+    {
+        var onPath = FindExeOnPath("cl.exe");
+
+        if (onPath != null)
+            return onPath;
+
+        var bundled = CombinePath(LatestMSVCVersionPath(), "bin", "Hostx64", "x64", "cl.exe");
+
+        if (File.Exists(bundled))
+            return bundled;
+
+        return null;
+    }
+
+    private static string? GetClangFormatExe()
+    {
+        var onPath = FindExeOnPath("clang-format.exe");
+
+        if (onPath != null)
+            return onPath;
+
+        var bundled = CombinePath(InstallPath, "VC", "Tools", "Llvm", "x64", "bin", "clang-format.exe");
+
+        if (File.Exists(bundled))
+            return bundled;
+
+        return null;
+    }
 
     private static string? GetVcpkgExe()
     {
@@ -239,30 +269,84 @@ public static class VisualStudio
         return 0;
     }
 
-    public static async Task<string> GetWindowsSdkExecutablePath()
+    // public static async Task<string> GetWindowsSdkExecutablePath()
+    // {
+    //     var devEnv = await DevEnv;
+
+    //     if (!devEnv.TryGetValue("WindowsSdkVerBinPath", out var sdkPath))
+    //         throw new KeyNotFoundException("WindowsSdkVerBinPath not found in developer environment.");
+
+    //     if (!Directory.Exists(sdkPath))
+    //         throw new DirectoryNotFoundException($"Windows SDK path does not exist: {sdkPath}");
+
+    //     return Path.Combine(sdkPath, "x64");
+    // }
+
+    public static string GetLatestWindowsSdkBin(string arch = "x64")
     {
-        var devEnv = await DevEnv;
+        if (!OperatingSystem.IsWindows())
+            throw new PlatformNotSupportedException("Windows SDK is only available on Windows.");
 
-        if (!devEnv.TryGetValue("WindowsSdkVerBinPath", out var sdkPath))
-            throw new KeyNotFoundException("WindowsSdkVerBinPath not found in developer environment.");
+        string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+        string kitsRoot = Path.Combine(programFilesX86, "Windows Kits", "10", "bin");
 
-        if (!Directory.Exists(sdkPath))
-            throw new DirectoryNotFoundException($"Windows SDK path does not exist: {sdkPath}");
-
-        return Path.Combine(sdkPath, "x64");
-    }
-
-    private static async Task SaveEnvToJson(Dictionary<string, string> env)
-    {
-        var options = new JsonSerializerOptions
+        if (!Directory.Exists(kitsRoot))
         {
-            WriteIndented = true,
-            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
+            // Fallback: try registry
+            kitsRoot = GetWindowsSdkRootFromRegistry() ?? throw new DirectoryNotFoundException(
+                "Windows Kits not found. Ensure Windows 10 SDK is installed.");
+            kitsRoot = Path.Combine(kitsRoot, "bin");
+        }
 
-        using var stream = File.Create(Path.Combine(App.Paths.AppLocal, "DevEnv.json"));
-        await JsonSerializer.SerializeAsync(stream, env, options);
+        // Get all version folders (e.g., "10.0.22621.0")
+        var versions = Directory.GetDirectories(kitsRoot)
+            .Select(Path.GetFileName)
+            .Where(v => !string.IsNullOrEmpty(v) && Version.TryParse(v, out _))
+            .Select(v => Version.Parse(v!))
+            .OrderByDescending(v => v)
+            .ToList();
+
+        if (versions.Count == 0)
+            throw new DirectoryNotFoundException("No Windows SDK versions found.");
+
+        foreach (var version in versions)
+        {
+            string binPath = Path.Combine(kitsRoot, version.ToString(), arch);
+            if (Directory.Exists(binPath))
+                return binPath;
+        }
+
+        throw new DirectoryNotFoundException($"No Windows SDK bin path found for architecture {arch}.");
     }
+
+    private static string? GetWindowsSdkRootFromRegistry()
+    {
+        if (!OperatingSystem.IsWindows())
+            return null;
+
+        try
+        {
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                @"SOFTWARE\Microsoft\Windows Kits\Installed Roots");
+            return key?.GetValue("KitsRoot10") as string;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // private static async Task SaveEnvToJson(Dictionary<string, string> env)
+    // {
+    //     var options = new JsonSerializerOptions
+    //     {
+    //         WriteIndented = true,
+    //         Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    //     };
+
+    //     using var stream = File.Create(Path.Combine(App.Paths.AppLocal, "DevEnv.json"));
+    //     await JsonSerializer.SerializeAsync(stream, env, options);
+    // }
 
     public static void ApplyEnvToProcess(ProcessStartInfo startInfo, Dictionary<string, string> env)
     {
