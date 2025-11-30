@@ -53,6 +53,7 @@ public static class App
         private static Argument<BuildConfiguration> Config = new("Config") { Arity = ArgumentArity.ZeroOrOne, Description = "Build Configuration (debug or release). Default: debug" };
         private static Argument<string[]> VSWhereArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> MSBuildArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
+        private static Argument<string[]> CLArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> RCArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> NinjaArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
         private static Argument<string[]> NugetArgs = new Argument<string[]>("Args") { Arity = ArgumentArity.ZeroOrMore };
@@ -70,6 +71,7 @@ public static class App
             ["devenv"] = new Command("devenv", "Refresh developer environment"),
             ["vswhere"] = new Command("vswhere") { VSWhereArgs },
             ["msbuild"] = new Command("msbuild") { MSBuildArgs },
+            ["cl"] = new Command("cl") { CLArgs },
             ["rc"] = new Command("rc") { RCArgs },
             ["ninja"] = new Command("ninja") { NinjaArgs },
             ["nuget"] = new Command("nuget") { NugetArgs },
@@ -170,6 +172,14 @@ public static class App
                     return 1;
 
                 return await Run(new(VisualStudio.MSBuildPath), parseResult.GetValue(MSBuildArgs));
+            });
+
+            SubCommand["cl"].SetAction(async parseResult =>
+            {
+                if (VisualStudio.ClPath is null)
+                    return 1;
+
+                return await Run(new(VisualStudio.ClPath), parseResult.GetValue(MSBuildArgs));
             });
 
             SubCommand["rc"].SetAction(async parseResult =>
