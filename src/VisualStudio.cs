@@ -109,6 +109,7 @@ public static class VisualStudio
     public static string? ClPath => CombinePath(LatestMSVCVersionPath(), "bin", "Hostx64", "x64", "cl.exe");
     public static string? VcpkgPath => GetVcpkgExe();
     public static string? NinjaPath => GetNinjaExe();
+    public static string? NugetPath => GetNugetExe();
     public static string? ClangFormatPath => CombinePath(InstallPath, "VC", "Tools", "Llvm", "x64", "bin", "clang-format.exe");
 
     private static string? GetVcpkgExe()
@@ -146,6 +147,16 @@ public static class VisualStudio
 
         if (File.Exists(bundled))
             return bundled;
+
+        return null;
+    }
+
+    private static string? GetNugetExe()
+    {
+        var onPath = FindExeOnPath("nuget.exe");
+
+        if (onPath != null)
+            return onPath;
 
         return null;
     }

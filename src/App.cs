@@ -179,10 +179,10 @@ public static class App
 
             SubCommand["nuget"].SetAction(async parseResult =>
             {
-                // if (VisualStudio.NugetPath is null)
-                //     return 1;
+                if (VisualStudio.NugetPath is null)
+                    return 1;
 
-                return await Run(new("nuget.exe"), parseResult.GetValue(VcpkgArgs));
+                return await Run(new(VisualStudio.NugetPath), parseResult.GetValue(NugetArgs));
             });
 
             SubCommand["vcpkg"].SetAction(async parseResult =>
