@@ -9,6 +9,7 @@ public static class App
 {
     public static int Main(string[] args)
     {
+        Vcpkg.Clone();
         return Commands.Root.Parse(args).Invoke();
     }
 

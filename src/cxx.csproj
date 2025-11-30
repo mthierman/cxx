@@ -14,10 +14,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0" />
     <PackageReference Include="Microsoft.Build" Version="18.0.2" />
-    <PackageReference Include="Microsoft.VisualStudio.Setup.Configuration.Interop"
-      Version="3.14.2075" />
+    <PackageReference Include="Microsoft.VisualStudio.Setup.Configuration.Interop" Version="3.14.2075" />
     <PackageReference Include="Microsoft.VisualStudio.SolutionPersistence" Version="1.0.52" />
   </ItemGroup>
 
