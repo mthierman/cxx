@@ -95,12 +95,12 @@ public static class App
 
             SubCommand["publish"].SetAction(async parseResult =>
             {
-                if (!Directory.Exists(Paths.Project.Publish))
-                    Directory.CreateDirectory(Paths.Project.Publish);
+                if (!Directory.Exists(Paths.Publish))
+                    Directory.CreateDirectory(Paths.Publish);
 
                 var build = await VisualStudio.Build(Project.BuildConfiguration.Release);
 
-                var destination = Path.Combine(Paths.Project.Publish, MetaData.FileName);
+                var destination = Path.Combine(Paths.Publish, MetaData.FileName);
 
                 if (File.Exists(destination))
                     File.Delete(destination);
@@ -223,50 +223,43 @@ public static class App
         return process.ExitCode;
     }
 
-    public static class Paths
+    public static ProjectPaths Paths => _paths.Value;
+    private static readonly Lazy<ProjectPaths> _paths = new(() =>
     {
-        public static readonly string ManifestFileName = "cxx.jsonc";
-        public static readonly string AppLocal = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "cxx");
-        public static readonly string AppRoaming = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "cxx");
+        var cwd = Environment.CurrentDirectory;
+        var root = string.Empty;
 
-        public static ProjectPaths Project => _project.Value;
-        private static readonly Lazy<ProjectPaths> _project = new(() =>
+        while (!string.IsNullOrEmpty(cwd))
         {
-            var cwd = Environment.CurrentDirectory;
-            var root = string.Empty;
+            if (File.Exists(Path.Combine(cwd, Project.Manifest.Filename)))
+                root = cwd;
 
-            while (!string.IsNullOrEmpty(cwd))
-            {
-                if (File.Exists(Path.Combine(cwd, ManifestFileName)))
-                    root = cwd;
+            cwd = Directory.GetParent(cwd)?.FullName;
+        }
 
-                cwd = Directory.GetParent(cwd)?.FullName;
-            }
+        if (string.IsNullOrEmpty(root))
+            throw new FileNotFoundException($"Manifest not found: {Project.Manifest.Filename}");
 
-            if (string.IsNullOrEmpty(root))
-                throw new FileNotFoundException($"Manifest not found: {ManifestFileName}");
+        return new(
+            Root: root,
+            Manifest: Path.Combine(root, Project.Manifest.Filename),
+            Src: Path.Combine(root, "src"),
+            Build: Path.Combine(root, "build"),
+            Debug: Path.Combine(root, "build", "debug"),
+            Release: Path.Combine(root, "build", "release"),
+            Publish: Path.Combine(root, "build", "publish"),
+            SolutionFile: Path.Combine(root, "build", "app.slnx"),
+            ProjectFile: Path.Combine(root, "build", "app.vcxproj"));
+    });
 
-            return new(
-                Root: root,
-                Manifest: Path.Combine(root, ManifestFileName),
-                Src: Path.Combine(root, "src"),
-                Build: Path.Combine(root, "build"),
-                Debug: Path.Combine(root, "build", "debug"),
-                Release: Path.Combine(root, "build", "release"),
-                Publish: Path.Combine(root, "build", "publish"),
-                SolutionFile: Path.Combine(root, "build", "app.slnx"),
-                ProjectFile: Path.Combine(root, "build", "app.vcxproj"));
-        });
-
-        public sealed record ProjectPaths(
-            string Root,
-            string Manifest,
-            string Src,
-            string Build,
-            string Debug,
-            string Release,
-            string Publish,
-            string SolutionFile,
-            string ProjectFile);
-    }
+    public sealed record ProjectPaths(
+        string Root,
+        string Manifest,
+        string Src,
+        string Build,
+        string Debug,
+        string Release,
+        string Publish,
+        string SolutionFile,
+        string ProjectFile);
 }

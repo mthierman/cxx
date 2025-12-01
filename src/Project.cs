@@ -5,6 +5,14 @@ namespace CXX;
 
 public static class Project
 {
+    public static readonly string AppLocal = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "cxx");
+    public static readonly string AppRoaming = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "cxx");
+
+    public static class Manifest
+    {
+        public static readonly string Filename = "cxx.jsonc";
+    }
+
     public enum BuildConfiguration
     {
         Debug,
@@ -13,8 +21,8 @@ public static class Project
 
     public static class Exe
     {
-        public static ProcessStartInfo Debug => new() { FileName = Path.Combine(App.Paths.Project.Build, "debug", "app.exe") };
-        public static ProcessStartInfo Release => new() { FileName = Path.Combine(App.Paths.Project.Build, "release", "app.exe") };
+        public static ProcessStartInfo Debug => new() { FileName = Path.Combine(App.Paths.Build, "debug", "app.exe") };
+        public static ProcessStartInfo Release => new() { FileName = Path.Combine(App.Paths.Build, "release", "app.exe") };
         public static ProcessStartInfo CXX => new() { FileName = Environment.ProcessPath };
         public static ProcessStartInfo VSWhere => new() { FileName = VisualStudio.VSWherePath };
         public static ProcessStartInfo MSBuild => new() { FileName = VisualStudio.MSBuildPath };
@@ -60,7 +68,7 @@ public static class Project
 
     public static async Task<int> New()
     {
-        var manifestFile = Path.Combine(Environment.CurrentDirectory, App.Paths.ManifestFileName);
+        var manifestFile = Path.Combine(Environment.CurrentDirectory, Manifest.Filename);
 
         if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any() ||
             File.Exists(manifestFile))
@@ -90,7 +98,7 @@ public static class Project
         await App.Run(vcpkgProcessInfo, "new", "--application");
 
         await File.WriteAllTextAsync(
-        Path.Combine(Directory.CreateDirectory(App.Paths.Project.Src).FullName, "app.cpp"),
+        Path.Combine(Directory.CreateDirectory(App.Paths.Src).FullName, "app.cpp"),
         @"
 #include <print>
 
