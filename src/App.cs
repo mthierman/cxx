@@ -21,10 +21,39 @@ public static class App
           .InformationalVersion ?? "0.0.0";
     }
 
-    public static class Config
+    public sealed class ProjectConfig
     {
-        public static string name = $"{MetaData.Name}-project";
-        public static string version = "0.0.0";
+        public static string name { get; set; } = $"{MetaData.Name}-project";
+        public static string version { get; set; } = "0.0.0";
+    }
+
+    public static class ConfigManager
+    {
+        private static readonly JsonSerializerOptions Options = new()
+        {
+            WriteIndented = true,
+            AllowTrailingCommas = true // optional
+        };
+
+        public static ProjectConfig Load()
+        {
+            if (!File.Exists(Paths.Project.Manifest))
+            {
+                var cfg = new ProjectConfig();
+                Save(cfg);
+                return cfg;
+            }
+
+            var json = File.ReadAllText(Paths.Project.Manifest);
+            return JsonSerializer.Deserialize<ProjectConfig>(json, Options)
+                   ?? new ProjectConfig();
+        }
+
+        public static void Save(ProjectConfig config)
+        {
+            var json = JsonSerializer.Serialize(config, Options);
+            File.WriteAllText(Paths.Project.Manifest, json);
+        }
     }
 
     public enum BuildConfiguration
