@@ -19,20 +19,6 @@ public static class Project
         Release
     }
 
-    public static class Exe
-    {
-        public static ProcessStartInfo Debug => new() { FileName = Path.Combine(App.Paths.Build, "debug", "app.exe") };
-        public static ProcessStartInfo Release => new() { FileName = Path.Combine(App.Paths.Build, "release", "app.exe") };
-        public static ProcessStartInfo CXX => new() { FileName = Environment.ProcessPath };
-        public static ProcessStartInfo VSWhere => new() { FileName = VisualStudio.VSWherePath };
-        public static ProcessStartInfo MSBuild => new() { FileName = VisualStudio.MSBuildPath };
-        public static ProcessStartInfo CL => new() { FileName = VisualStudio.ClPath };
-        public static ProcessStartInfo RC => new() { FileName = VisualStudio.RcPath };
-        public static ProcessStartInfo Vcpkg => new() { FileName = VisualStudio.VcpkgPath };
-        public static ProcessStartInfo Ninja => new() { FileName = VisualStudio.NinjaPath };
-        public static ProcessStartInfo ClangFormat => new() { FileName = VisualStudio.ClangFormatPath };
-    }
-
     public sealed class Config
     {
         public string name { get; set; } = $"blank-project";
@@ -98,7 +84,7 @@ public static class Project
         await App.Run(vcpkgProcessInfo, "new", "--application");
 
         await File.WriteAllTextAsync(
-        Path.Combine(Directory.CreateDirectory(App.Paths.Src).FullName, "app.cpp"),
+        Path.Combine(Directory.CreateDirectory(Paths.Src).FullName, "app.cpp"),
         @"
 #include <print>
 
@@ -111,4 +97,60 @@ auto wmain() -> int {
 
         return 0;
     }
+
+    public static ProjectPaths Paths => _paths.Value;
+    private static readonly Lazy<ProjectPaths> _paths = new(() =>
+    {
+        var cwd = Environment.CurrentDirectory;
+        var root = string.Empty;
+
+        while (!string.IsNullOrEmpty(cwd))
+        {
+            if (File.Exists(Path.Combine(cwd, Project.Manifest.Filename)))
+                root = cwd;
+
+            cwd = Directory.GetParent(cwd)?.FullName;
+        }
+
+        if (string.IsNullOrEmpty(root))
+            throw new FileNotFoundException($"Manifest not found: {Project.Manifest.Filename}");
+
+        return new(
+            Root: root,
+            Manifest: Path.Combine(root, Project.Manifest.Filename),
+            Src: Path.Combine(root, "src"),
+            Build: Path.Combine(root, "build"),
+            Debug: Path.Combine(root, "build", "debug"),
+            Release: Path.Combine(root, "build", "release"),
+            Publish: Path.Combine(root, "build", "publish"),
+            SolutionFile: Path.Combine(root, "build", "app.slnx"),
+            ProjectFile: Path.Combine(root, "build", "app.vcxproj"));
+    });
+
+    public sealed record ProjectPaths(
+        string Root,
+        string Manifest,
+        string Src,
+        string Build,
+        string Debug,
+        string Release,
+        string Publish,
+        string SolutionFile,
+        string ProjectFile);
+
+
+    public static class Exe
+    {
+        public static ProcessStartInfo Debug => new() { FileName = Path.Combine(Paths.Build, "debug", "app.exe") };
+        public static ProcessStartInfo Release => new() { FileName = Path.Combine(Paths.Build, "release", "app.exe") };
+        public static ProcessStartInfo CXX => new() { FileName = Environment.ProcessPath };
+        public static ProcessStartInfo VSWhere => new() { FileName = VisualStudio.VSWherePath };
+        public static ProcessStartInfo MSBuild => new() { FileName = VisualStudio.MSBuildPath };
+        public static ProcessStartInfo CL => new() { FileName = VisualStudio.ClPath };
+        public static ProcessStartInfo RC => new() { FileName = VisualStudio.RcPath };
+        public static ProcessStartInfo Vcpkg => new() { FileName = VisualStudio.VcpkgPath };
+        public static ProcessStartInfo Ninja => new() { FileName = VisualStudio.NinjaPath };
+        public static ProcessStartInfo ClangFormat => new() { FileName = VisualStudio.ClangFormatPath };
+    }
+
 }

@@ -220,8 +220,8 @@ public static class VisualStudio
 
     public static async Task<int> Build(Project.BuildConfiguration config)
     {
-        if (!Directory.Exists(App.Paths.Build))
-            Directory.CreateDirectory(App.Paths.Build);
+        if (!Directory.Exists(Project.Paths.Build))
+            Directory.CreateDirectory(Project.Paths.Build);
 
         if (await Generate() != 0)
             throw new InvalidOperationException("Generation failed");
@@ -234,7 +234,7 @@ public static class VisualStudio
         exe.ArgumentList.Add("-v:minimal");
         exe.ArgumentList.Add($"/p:Configuration={(config == Project.BuildConfiguration.Debug ? "Debug" : "Release")}");
         exe.ArgumentList.Add("/p:Platform=x64");
-        exe.WorkingDirectory = App.Paths.Build;
+        exe.WorkingDirectory = Project.Paths.Build;
         var exitCode = await App.Run(exe); ;
         Console.Error.WriteLine();
 
@@ -243,24 +243,24 @@ public static class VisualStudio
 
     public static int Clean()
     {
-        if (!Directory.Exists(App.Paths.Build))
+        if (!Directory.Exists(Project.Paths.Build))
             return 1;
 
         string[] dirs = { "debug", "release", "publish" };
 
         foreach (string dir in dirs)
         {
-            var markedDir = Path.Combine(App.Paths.Build, dir);
+            var markedDir = Path.Combine(Project.Paths.Build, dir);
 
             if (Directory.Exists(markedDir))
                 Directory.Delete(markedDir, true);
         }
 
-        string[] files = { App.Paths.SolutionFile, App.Paths.ProjectFile };
+        string[] files = { Project.Paths.SolutionFile, Project.Paths.ProjectFile };
 
         foreach (string file in files)
         {
-            var markedFile = Path.Combine(App.Paths.Build, file);
+            var markedFile = Path.Combine(Project.Paths.Build, file);
 
             if (File.Exists(markedFile))
                 File.Delete(markedFile);
@@ -370,7 +370,7 @@ public static class VisualStudio
 
         solutionProject.Id = Guid.NewGuid();
 
-        await SolutionSerializers.SlnXml.SaveAsync(App.Paths.SolutionFile, solutionModel, new CancellationToken());
+        await SolutionSerializers.SlnXml.SaveAsync(Project.Paths.SolutionFile, solutionModel, new CancellationToken());
 
         return 0;
     }
@@ -525,22 +525,22 @@ public static class VisualStudio
         vcpkg.AddProperty("VcpkgUseMD", "true");
 
         // ----- 15. Add sources from "src" folder -----
-        var sourceFiles = Directory.GetFiles(App.Paths.Src, "*.cpp");
-        var moduleFiles = Directory.GetFiles(App.Paths.Src, "*.ixx");
-        var headerFiles = Directory.GetFiles(App.Paths.Src, "*.h");
+        var sourceFiles = Directory.GetFiles(Project.Paths.Src, "*.cpp");
+        var moduleFiles = Directory.GetFiles(Project.Paths.Src, "*.ixx");
+        var headerFiles = Directory.GetFiles(Project.Paths.Src, "*.h");
 
         var sources = project.AddItemGroup();
 
         foreach (var sourceFile in sourceFiles)
-            sources.AddItem("ClCompile", Path.GetRelativePath(App.Paths.Build, sourceFile).Replace('\\', '/'));
+            sources.AddItem("ClCompile", Path.GetRelativePath(Project.Paths.Build, sourceFile).Replace('\\', '/'));
 
         foreach (var moduleFile in moduleFiles)
-            sources.AddItem("ClCompile", Path.GetRelativePath(App.Paths.Build, moduleFile).Replace('\\', '/'));
+            sources.AddItem("ClCompile", Path.GetRelativePath(Project.Paths.Build, moduleFile).Replace('\\', '/'));
 
         foreach (var headerFile in headerFiles)
-            sources.AddItem("ClInclude", Path.GetRelativePath(App.Paths.Build, headerFile).Replace('\\', '/'));
+            sources.AddItem("ClInclude", Path.GetRelativePath(Project.Paths.Build, headerFile).Replace('\\', '/'));
 
-        project.Save(App.Paths.ProjectFile);
+        project.Save(Project.Paths.ProjectFile);
 
         Print.Err("Generation successful.", ConsoleColor.Green);
 
@@ -587,7 +587,7 @@ public static class VisualStudio
     {
         var extensions = new[] { ".c", ".cpp", ".cxx", ".h", ".hpp", ".hxx", ".ixx" };
 
-        var files = Directory.GetFiles(App.Paths.Src, "*.*", SearchOption.AllDirectories)
+        var files = Directory.GetFiles(Project.Paths.Src, "*.*", SearchOption.AllDirectories)
                              .Where(f => extensions.Contains(Path.GetExtension(f)))
                              .ToArray();
 

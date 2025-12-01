@@ -95,12 +95,12 @@ public static class App
 
             SubCommand["publish"].SetAction(async parseResult =>
             {
-                if (!Directory.Exists(Paths.Publish))
-                    Directory.CreateDirectory(Paths.Publish);
+                if (!Directory.Exists(Project.Paths.Publish))
+                    Directory.CreateDirectory(Project.Paths.Publish);
 
                 var build = await VisualStudio.Build(Project.BuildConfiguration.Release);
 
-                var destination = Path.Combine(Paths.Publish, MetaData.FileName);
+                var destination = Path.Combine(Project.Paths.Publish, MetaData.FileName);
 
                 if (File.Exists(destination))
                     File.Delete(destination);
@@ -222,44 +222,4 @@ public static class App
 
         return process.ExitCode;
     }
-
-    public static ProjectPaths Paths => _paths.Value;
-    private static readonly Lazy<ProjectPaths> _paths = new(() =>
-    {
-        var cwd = Environment.CurrentDirectory;
-        var root = string.Empty;
-
-        while (!string.IsNullOrEmpty(cwd))
-        {
-            if (File.Exists(Path.Combine(cwd, Project.Manifest.Filename)))
-                root = cwd;
-
-            cwd = Directory.GetParent(cwd)?.FullName;
-        }
-
-        if (string.IsNullOrEmpty(root))
-            throw new FileNotFoundException($"Manifest not found: {Project.Manifest.Filename}");
-
-        return new(
-            Root: root,
-            Manifest: Path.Combine(root, Project.Manifest.Filename),
-            Src: Path.Combine(root, "src"),
-            Build: Path.Combine(root, "build"),
-            Debug: Path.Combine(root, "build", "debug"),
-            Release: Path.Combine(root, "build", "release"),
-            Publish: Path.Combine(root, "build", "publish"),
-            SolutionFile: Path.Combine(root, "build", "app.slnx"),
-            ProjectFile: Path.Combine(root, "build", "app.vcxproj"));
-    });
-
-    public sealed record ProjectPaths(
-        string Root,
-        string Manifest,
-        string Src,
-        string Build,
-        string Debug,
-        string Release,
-        string Publish,
-        string SolutionFile,
-        string ProjectFile);
 }
