@@ -38,14 +38,14 @@ public static class App
 
         public static ProjectConfig Load(string path)
         {
-            if (!File.Exists(Paths.Project.Manifest))
+            if (!File.Exists(path))
             {
                 var cfg = new ProjectConfig();
                 Save(cfg, path);
                 return cfg;
             }
 
-            var json = File.ReadAllText(Paths.Project.Manifest);
+            var json = File.ReadAllText(path);
             return JsonSerializer.Deserialize<ProjectConfig>(json, Options)
                    ?? new ProjectConfig();
         }
