@@ -1,17 +1,11 @@
 ﻿using System.CommandLine;
 using System.Diagnostics;
 using System.Reflection;
-using System.Text.Json;
 
 namespace CXX;
 
 public static class App
 {
-    public static int Main(string[] args)
-    {
-        return Commands.Root.Parse(args).Invoke();
-    }
-
     public static class MetaData
     {
         public static readonly string Name = "cxx";
@@ -19,6 +13,11 @@ public static class App
         public static readonly string Version = Assembly.GetExecutingAssembly()
           .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
           .InformationalVersion ?? "0.0.0";
+    }
+
+    public static int Main(string[] args)
+    {
+        return Commands.Root.Parse(args).Invoke();
     }
 
     public static class Commands
