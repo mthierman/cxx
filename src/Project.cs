@@ -65,7 +65,7 @@ public static class Project
         if (Directory.EnumerateFileSystemEntries(Environment.CurrentDirectory).Any() ||
             File.Exists(manifestFile))
         {
-            App.Print.Err($"Directory was not empty.", ConsoleColor.Red);
+            Print.Err($"Directory was not empty.", ConsoleColor.Red);
 
             return 1;
         }
@@ -78,9 +78,9 @@ public static class Project
 
         Save(config, manifestFile);
 
-        App.Print.Err($"Generated new {App.MetaData.Name} project", ConsoleColor.Green);
+        Print.Err($"Generated new {App.MetaData.Name} project", ConsoleColor.Green);
         Console.Error.WriteLine();
-        App.Print.Err(JsonSerializer.Serialize(config,
+        Print.Err(JsonSerializer.Serialize(config,
             new JsonSerializerOptions { WriteIndented = true }),
             ConsoleColor.DarkGreen);
 
